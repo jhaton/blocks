@@ -7,13 +7,40 @@
 
 static SDL_GPUDevice* device;
 static SDL_GPUGraphicsPipeline* pipelines[PIPELINE_COUNT];
+static SDL_GPUShaderFormat shader_format;
+static const char* shader_extension;
+static const char* shader_entrypoint;
+
+static bool init_shader_format(void) {
+	const SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(device);
+	if (formats == SDL_GPU_SHADERFORMAT_INVALID) {
+		SDL_Log("Failed to query shader formats: %s", SDL_GetError());
+		return false;
+	}
+	if (formats & SDL_GPU_SHADERFORMAT_SPIRV) {
+		shader_format = SDL_GPU_SHADERFORMAT_SPIRV;
+		shader_extension = ".spv";
+		shader_entrypoint = "main";
+		return true;
+	}
+	if (formats & SDL_GPU_SHADERFORMAT_MSL) {
+		shader_format = SDL_GPU_SHADERFORMAT_MSL;
+		shader_extension = ".msl";
+		shader_entrypoint = "main0";
+		return true;
+	}
+	SDL_Log("Unsupported shader format flags: 0x%x", formats);
+	return false;
+}
 
 static SDL_GPUShader* load(const char* file, const int uniforms, const int samplers) {
 	assert(file);
 	SDL_GPUShaderCreateInfo info = {0};
-	void* code = SDL_LoadFile(file, &info.code_size);
+	char path[64];
+	SDL_snprintf(path, sizeof(path), "%s%s", file, shader_extension);
+	void* code = SDL_LoadFile(path, &info.code_size);
 	if (!code) {
-		SDL_Log("Failed to load %s shader: %s", file, SDL_GetError());
+		SDL_Log("Failed to load %s shader: %s", path, SDL_GetError());
 		return NULL;
 	}
 	info.code = code;
@@ -22,8 +49,8 @@ static SDL_GPUShader* load(const char* file, const int uniforms, const int sampl
 	} else {
 		info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
 	}
-	info.format = SDL_GPU_SHADERFORMAT_SPIRV;
-	info.entrypoint = "main";
+	info.format = shader_format;
+	info.entrypoint = shader_entrypoint;
 	info.num_uniform_buffers = uniforms;
 	info.num_samplers = samplers;
 	SDL_GPUShader* shader = SDL_CreateGPUShader(device, &info);
@@ -124,7 +151,7 @@ static SDL_GPUGraphicsPipeline* load_opaque(const SDL_GPUTextureFormat format) {
 							.format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT,
 						},
 						{
-							.format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT,
+							.format = SDL_GPU_TEXTUREFORMAT_R32G32_FLOAT,
 						},
 						{
 							.format = SDL_GPU_TEXTUREFORMAT_R32_UINT,
@@ -383,6 +410,9 @@ bool pipeline_init(SDL_GPUDevice* handle, const SDL_GPUTextureFormat format) {
 	assert(handle);
 	assert(format);
 	device = handle;
+	if (!init_shader_format()) {
+		return false;
+	}
 	pipelines[PIPELINE_SKY] = load_sky(format);
 	pipelines[PIPELINE_SHADOW] = load_shadow(format);
 	pipelines[PIPELINE_OPAQUE] = load_opaque(format);
