@@ -26,8 +26,8 @@ layout(set = 3, binding = 2) uniform t_shadow_matrix
 void main()
 {
     const vec3 position = texture(s_position, i_uv).xyz;
-    const vec3 uv = texture(s_uv, i_uv).xyz;
     const uint voxel = texture(s_voxel, i_uv).x;
+    const vec3 uv = vec3(texture(s_uv, i_uv).xy, get_uv(voxel).z);
     if (length(uv) == 0)
     {
         discard;
