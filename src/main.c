@@ -209,7 +209,7 @@ static bool resize_textures(int render_width, int render_height) {
 		return false;
 	}
 	tci.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
-	tci.format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT;
+	tci.format = SDL_GPU_TEXTUREFORMAT_R32G32_FLOAT;
 	uv_texture = SDL_CreateGPUTexture(device, &tci);
 	if (!uv_texture) {
 		SDL_Log("Failed to create uv texture: %s", SDL_GetError());
@@ -812,7 +812,7 @@ int main(int argc, char** argv) {
 		SDL_Log("Failed to create window: %s", SDL_GetError());
 		return EXIT_FAILURE;
 	}
-	device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, DEVICE_VALIDATION, NULL);
+	device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL, DEVICE_VALIDATION, NULL);
 	if (!device) {
 		SDL_Log("Failed to create device: %s", SDL_GetError());
 		return EXIT_FAILURE;
