@@ -12,11 +12,11 @@ configure-release:
 
 # Build debug version
 build-debug: configure-debug
-    cmake --build build/debug -j$(nproc)
+    cmake --build build/debug --parallel
 
 # Build release version
 build-release: configure-release
-    cmake --build build/release -j$(nproc)
+    cmake --build build/release --parallel
 
 # Run debug version (from bin/ directory)
 run-debug: build-debug
