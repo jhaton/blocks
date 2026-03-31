@@ -50,6 +50,21 @@ cd bin
 ./blocks
 ```
 
+#### macOS
+
+Install `glslc` and either `shadercross` or `spirv-cross` so the build can produce Metal-compatible shader artifacts.
+
+```bash
+git clone https://github.com/jsoulier/blocks --recurse-submodules
+cd blocks
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --parallel 8
+cd bin
+./blocks
+```
+
 ### Controls
 
 - `WASDEQ` to move
