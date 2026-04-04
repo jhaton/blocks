@@ -1,90 +1,127 @@
-# Blocks
+# SDL_GPU FPS Starter
 
-![](image.png)
+Tiny first-person starter repo in C using SDL3's GPU API, CMake, `just`, and shader cross-compilation for Vulkan and Metal.
 
-Tiny Minecraft clone in C and GLSL using the new SDL3 GPU API
+It is intentionally small on day one, but structured so adding render passes, gameplay systems, entities, and persistence is obvious.
 
-### Features
+## What This Repo Keeps
 
-- Procedural world generation
-- Parallel chunk loading
-- Blocks and plants
-- Transparency (limited)
-- Deferred rendering
-- Directional shadows
-- SSAO (ish)
-- Water depth shading
-- Persistent worlds
+- SDL3 GPU bootstrap and swapchain setup
+- CMake build with shader compilation
+- `just` recipes for configure/build/run
+- Vulkan SPIR-V shaders with automatic Metal translation on macOS
+- A compact first-person camera and input loop
+- A small homemade ECS-style scene layer
+- A thin save/load service using a tiny text format
 
-### Building
+## Default Scene
 
-#### Windows
+The starter launches into a stylized graybox arena:
 
-Install the [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/) for glslc
+- a walkable floor and enclosing walls
+- a directional light with a shadow map
+- a spinning monolith
+- a moving platform driven by a behavior component
+- a simple overlay crosshair
+
+The scene is box-based on purpose so the rendering and entity structure stay easy to read.
+
+## Architecture
+
+### Render passes
+
+The frame is organized as explicit passes in [`src/renderer.c`](/Users/jason/github/jhaton/blocks/src/renderer.c):
+
+1. `shadow`
+2. `scene`
+3. `overlay`
+
+Each pass lives in its own file:
+
+- [`src/render_pass_shadow.c`](/Users/jason/github/jhaton/blocks/src/render_pass_shadow.c)
+- [`src/render_pass_scene.c`](/Users/jason/github/jhaton/blocks/src/render_pass_scene.c)
+- [`src/render_pass_overlay.c`](/Users/jason/github/jhaton/blocks/src/render_pass_overlay.c)
+
+To add another pass, copy the same pattern:
+
+- add shaders
+- create a new `render_pass_*.c`
+- register it in the renderer pass array
+- give it any textures/samplers it needs
+
+### Entities and behavior
+
+The scene layer is in [`src/scene.h`](/Users/jason/github/jhaton/blocks/src/scene.h) and [`src/scene.c`](/Users/jason/github/jhaton/blocks/src/scene.c).
+
+It uses a small homemade ECS-like layout:
+
+- entity IDs
+- parallel component arrays
+- update systems that iterate matching components
+
+Included starter components:
+
+- `Transform`
+- `Renderable`
+- `DirectionalLight`
+- `Oscillator`
+- `Spinner`
+
+To add behavior, create a new component array plus a small update loop in `scene_update`.
+
+### Persistence
+
+The save service lives in [`src/save.c`](/Users/jason/github/jhaton/blocks/src/save.c).
+
+Current file format:
+
+```txt
+version 1
+player_position 0.000000 1.800000 9.500000
+player_rotation -0.139626 3.141593
+```
+
+It is intentionally trivial to parse from either C or future lightweight C++ code.
+
+## Controls
+
+- `WASD` move on the ground plane
+- `Q/E` move down/up
+- mouse look after clicking into the window
+- `LShift` move faster
+- `LCtrl` move slower
+- `Esc` release mouse capture
+- `F11` toggle fullscreen
+- `F5` save player state
+- `F9` reload player state
+
+## Build
+
+### macOS
+
+Install `glslc` and either `shadercross` or `spirv-cross`.
+
+### Linux
+
+Install `glslc`.
+
+### Windows
+
+Install the Vulkan SDK so `glslc` is available.
+
+Then:
 
 ```bash
 git clone https://github.com/jsoulier/blocks --recurse-submodules
 cd blocks
-mkdir build
-cd build
-cmake ..
-cmake --build . --parallel 8 --config Release
-cd bin
-./blocks.exe
+just run-debug
 ```
 
-#### Linux
+Or use the CMake flow directly:
 
 ```bash
-sudo apt install glslc
+cmake -B build/debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/debug --parallel
+cd build/debug/bin
+./sdl_gpu_fps_starter
 ```
-
-```bash
-git clone https://github.com/jsoulier/blocks --recurse-submodules
-cd blocks
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --parallel 8
-cd bin
-./blocks
-```
-
-#### macOS
-
-Install `glslc` and either `shadercross` or `spirv-cross` so the build can produce Metal-compatible shader artifacts.
-
-```bash
-git clone https://github.com/jsoulier/blocks --recurse-submodules
-cd blocks
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --parallel 8
-cd bin
-./blocks
-```
-
-### Controls
-
-- `WASDEQ` to move
-- `Escape` to unfocus
-- `LClick` to break a block
-- `RClick` to place a block
-- `B` to toggle blocks
-- `F11` to toggle fullscreen
-- `LControl` to move quickly
-- `LShift` to move slowly
-
-### Rendering
-
-1. Draw the sky to the g-buffer
-2. Draw the world from the sun's perspective to a depth texture (shadows)
-3. Draw the world (opaque only) to the g-buffer
-4. Calculate SSAO using the g-buffer
-5. Combine the g-buffer, SSAO, and shadows together to create a composite texture
-6. Draw the world (transparent only) with blending to the composite texture
-7. Draw the raycast block to the composite texture
-8. Upscale the composite texture to the swapchain texture
-9. Draw the UI over the swapchain texture
-10. Submit

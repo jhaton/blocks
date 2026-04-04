@@ -1,25 +1,14 @@
 #version 450
 
-#include "helpers.glsl"
+layout(location = 0) in vec3 i_position;
 
-layout(location = 0) in uint i_voxel;
-layout(set = 1, binding = 0) uniform t_position
+layout(set = 1, binding = 0) uniform shadow_vertex_uniforms
 {
-    ivec3 u_position;
-};
-layout(set = 1, binding = 1) uniform t_matrix
-{
-    mat4 u_matrix;
+    mat4 u_light_matrix;
+    mat4 u_model_matrix;
 };
 
 void main()
 {
-    if (get_shadow(i_voxel))
-    {
-        gl_Position = u_matrix * vec4(u_position + get_position(i_voxel), 1.0);
-    }
-    else
-    {
-        gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
-    }
+    gl_Position = u_light_matrix * u_model_matrix * vec4(i_position, 1.0);
 }

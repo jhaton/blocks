@@ -18,37 +18,37 @@ build-debug: configure-debug
 build-release: configure-release
     cmake --build build/release --parallel
 
-# Run debug version (from bin/ directory)
+# Run debug version
 run-debug: build-debug
-    cd build/debug/bin && ./blocks
+    cd build/debug/bin && ./sdl_gpu_fps_starter
 
-# Run release version (from bin/ directory)
+# Run release version
 run-release: build-release
-    cd build/release/bin && ./blocks
+    cd build/release/bin && ./sdl_gpu_fps_starter
 
-# Clean and rebuild debug
+# Run debug with RenderDoc capture
+renderdoc-debug: build-debug
+    cd build/debug/bin && renderdoccmd capture ./sdl_gpu_fps_starter
+
+# Run release with RenderDoc capture
+renderdoc-release: build-release
+    cd build/release/bin && renderdoccmd capture ./sdl_gpu_fps_starter
+
+# Clean debug build and rebuild
 clean-build-debug:
     rm -rf build/debug
     just build-debug
 
-# Clean and rebuild release
+# Clean release build and rebuild
 clean-build-release:
     rm -rf build/release
     just build-release
 
-# Complete clean build (both debug and release)
+# Clean and rebuild both configurations
 clean-build-all:
     rm -rf build/debug build/release
     just build-debug
     just build-release
-
-# Run debug with RenderDoc capture
-renderdoc-debug: build-debug
-    cd build/debug/bin && renderdoccmd capture ./blocks
-
-# Run release with RenderDoc capture
-renderdoc-release: build-release
-    cd build/release/bin && renderdoccmd capture ./blocks
 
 # Clean everything
 clean:

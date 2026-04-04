@@ -63,7 +63,7 @@ static void rotate(float matrix[4][4], const float x, const float y, const float
 	matrix[3][3] = 1.0f;
 }
 
-static void perspective(float matrix[4][4], const float aspect, const float fov, const float near,
+	static void perspective(float matrix[4][4], const float aspect, const float fov, const float near,
 						const float far) {
 	const float f = 1.0f / tanf(fov / 2.0f);
 	matrix[0][0] = f / aspect;
@@ -155,10 +155,10 @@ void camera_init(camera_t* camera, const camera_type_t type) {
 	camera->yaw = rad(0.0f);
 	camera->width = 640.0f;
 	camera->height = 480.0f;
-	camera->fov = rad(90.0f);
-	camera->near = 1.0f;
-	camera->far = 300.0f;
-	camera->ortho = 300.0f;
+	camera->fov = rad(75.0f);
+	camera->near = 0.1f;
+	camera->far = 500.0f;
+	camera->ortho = 64.0f;
 	camera->dirty = true;
 }
 
