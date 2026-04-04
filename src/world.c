@@ -259,7 +259,7 @@ void world_update(const int x, const int y, const int z) {
 }
 
 void world_render(const camera_t* camera, SDL_GPUCommandBuffer* commands, SDL_GPURenderPass* pass,
-				  const chunk_type_t type) {
+				  const chunk_type_t type, const Uint32 uniform_slot) {
 	assert(commands);
 	assert(pass);
 	if (!ibo) {
@@ -291,7 +291,7 @@ void world_render(const camera_t* camera, SDL_GPUCommandBuffer* commands, SDL_GP
 		int32_t position[3] = {x, 0, z};
 		SDL_GPUBufferBinding vbb = {0};
 		vbb.buffer = chunk->vbos[type];
-		SDL_PushGPUVertexUniformData(commands, 0, position, sizeof(position));
+		SDL_PushGPUVertexUniformData(commands, uniform_slot, position, sizeof(position));
 		SDL_BindGPUVertexBuffers(pass, 0, &vbb, 1);
 		SDL_DrawGPUIndexedPrimitives(pass, chunk->sizes[type] * 6, 1, 0, 0, 0);
 	}
