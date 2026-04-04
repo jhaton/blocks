@@ -6,8 +6,8 @@
 #include "helpers.h"
 #include "pipeline.h"
 #include "raycast.h"
+#include "render_layout.h"
 #include "world.h"
-#include <string.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -42,6 +42,36 @@ static uint64_t time2;
 static float cooldown;
 static block_t selected = BLOCK_GRASS;
 static bool gpu_is_metal;
+
+static void push_composite_uniforms(const render_backend_layout_t* layout, const float position[3],
+									const float vector[3]) {
+	SDL_PushGPUFragmentUniformData(
+		commands, layout->composite_fragment_uniform_slots[COMPOSITE_UNIFORM_PLAYER_POSITION], position, 12);
+	SDL_PushGPUFragmentUniformData(
+		commands, layout->composite_fragment_uniform_slots[COMPOSITE_UNIFORM_SHADOW_VECTOR], vector, 12);
+	SDL_PushGPUFragmentUniformData(
+		commands, layout->composite_fragment_uniform_slots[COMPOSITE_UNIFORM_SHADOW_MATRIX],
+		shadow_camera.matrix, 64);
+}
+
+static void push_transparent_uniforms(const render_backend_layout_t* layout, const float position[3],
+									  const float vector[3]) {
+	SDL_PushGPUVertexUniformData(
+		commands, layout->transparent_vertex_uniform_slots[TRANSPARENT_VERTEX_UNIFORM_PLAYER_MATRIX],
+		player_camera.matrix, 64);
+	SDL_PushGPUVertexUniformData(
+		commands, layout->transparent_vertex_uniform_slots[TRANSPARENT_VERTEX_UNIFORM_PLAYER_POSITION],
+		position, 12);
+	SDL_PushGPUVertexUniformData(
+		commands, layout->transparent_vertex_uniform_slots[TRANSPARENT_VERTEX_UNIFORM_SHADOW_MATRIX],
+		shadow_camera.matrix, 64);
+	SDL_PushGPUFragmentUniformData(
+		commands, layout->transparent_fragment_uniform_slots[TRANSPARENT_FRAGMENT_UNIFORM_SHADOW_VECTOR],
+		vector, 12);
+	SDL_PushGPUFragmentUniformData(
+		commands, layout->transparent_fragment_uniform_slots[TRANSPARENT_FRAGMENT_UNIFORM_PLAYER_POSITION],
+		position, 12);
+}
 
 static bool create_atlas() {
 	// Load atlas texture from disk
@@ -391,6 +421,7 @@ static void draw_sky() {
 }
 
 static void draw_shadow() {
+	const render_backend_layout_t* layout = render_layout_get(gpu_is_metal);
 	SDL_GPUDepthStencilTargetInfo dsti = {0};
 	dsti.clear_depth = 1.0f;
 	dsti.load_op = SDL_GPU_LOADOP_CLEAR;
@@ -404,8 +435,8 @@ static void draw_shadow() {
 		return;
 	}
 	pipeline_bind(pass, PIPELINE_SHADOW);
-	SDL_PushGPUVertexUniformData(commands, gpu_is_metal ? 0 : 1, shadow_camera.matrix, 64);
-	world_render(NULL, commands, pass, CHUNK_TYPE_OPAQUE, gpu_is_metal ? 1 : 0);
+	SDL_PushGPUVertexUniformData(commands, layout->shadow_vertex_uniform_slots[1], shadow_camera.matrix, 64);
+	world_render(NULL, commands, pass, CHUNK_TYPE_OPAQUE, layout->shadow_vertex_uniform_slots[0]);
 	SDL_EndGPURenderPass(pass);
 }
 
@@ -473,6 +504,7 @@ static void draw_ssao() {
 }
 
 static void composite() {
+	const render_backend_layout_t* layout = render_layout_get(gpu_is_metal);
 	SDL_GPUColorTargetInfo cti = {0};
 	cti.load_op = SDL_GPU_LOADOP_LOAD;
 	cti.store_op = SDL_GPU_STOREOP_STORE;
@@ -500,29 +532,15 @@ static void composite() {
 	camera_get_position(&player_camera, &position[0], &position[1], &position[2]);
 	camera_get_vector(&shadow_camera, &vector[0], &vector[1], &vector[2]);
 	pipeline_bind(pass, PIPELINE_COMPOSITE);
-	if (gpu_is_metal) {
-		SDL_GPUTextureSamplerBinding metal_tsb[6] = {0};
-		metal_tsb[0] = tsb[1];
-		metal_tsb[1] = tsb[3];
-		metal_tsb[2] = tsb[2];
-		metal_tsb[3] = tsb[0];
-		metal_tsb[4] = tsb[4];
-		metal_tsb[5] = tsb[5];
-		SDL_BindGPUFragmentSamplers(pass, 0, metal_tsb, 6);
-		SDL_PushGPUFragmentUniformData(commands, 0, shadow_camera.matrix, 64);
-		SDL_PushGPUFragmentUniformData(commands, 1, position, 12);
-		SDL_PushGPUFragmentUniformData(commands, 2, vector, 12);
-	} else {
-		SDL_BindGPUFragmentSamplers(pass, 0, tsb, 6);
-		SDL_PushGPUFragmentUniformData(commands, 0, position, 12);
-		SDL_PushGPUFragmentUniformData(commands, 1, vector, 12);
-		SDL_PushGPUFragmentUniformData(commands, 2, shadow_camera.matrix, 64);
-	}
+	render_layout_bind_fragment_samplers(pass, tsb, layout->composite_sampler_order,
+										 COMPOSITE_SAMPLER_COUNT);
+	push_composite_uniforms(layout, position, vector);
 	SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
 	SDL_EndGPURenderPass(pass);
 }
 
 static void draw_transparent() {
+	const render_backend_layout_t* layout = render_layout_get(gpu_is_metal);
 	SDL_GPUColorTargetInfo cti = {0};
 	cti.load_op = SDL_GPU_LOADOP_LOAD;
 	cti.store_op = SDL_GPU_STOREOP_STORE;
@@ -548,21 +566,7 @@ static void draw_transparent() {
 	camera_get_position(&player_camera, &position[0], &position[1], &position[2]);
 	camera_get_vector(&shadow_camera, &vector[0], &vector[1], &vector[2]);
 	pipeline_bind(pass, PIPELINE_TRANSPARENT);
-	if (gpu_is_metal) {
-		SDL_PushGPUVertexUniformData(commands, 1, position, 12);
-		SDL_PushGPUVertexUniformData(commands, 2, player_camera.matrix, 64);
-	} else {
-		SDL_PushGPUVertexUniformData(commands, 1, player_camera.matrix, 64);
-		SDL_PushGPUVertexUniformData(commands, 2, position, 12);
-	}
-	SDL_PushGPUVertexUniformData(commands, 3, shadow_camera.matrix, 64);
-	if (gpu_is_metal) {
-		SDL_PushGPUFragmentUniformData(commands, 0, position, 12);
-		SDL_PushGPUFragmentUniformData(commands, 1, vector, 12);
-	} else {
-		SDL_PushGPUFragmentUniformData(commands, 0, vector, 12);
-		SDL_PushGPUFragmentUniformData(commands, 1, position, 12);
-	}
+	push_transparent_uniforms(layout, position, vector);
 	SDL_BindGPUFragmentSamplers(pass, 0, tsb, 3);
 	world_render(&player_camera, commands, pass, CHUNK_TYPE_TRANSPARENT, 0);
 	SDL_EndGPURenderPass(pass);
@@ -843,7 +847,7 @@ int main(int argc, char** argv) {
 		SDL_Log("Failed to create device: %s", SDL_GetError());
 		return EXIT_FAILURE;
 	}
-	gpu_is_metal = SDL_strcmp(SDL_GetGPUDeviceDriver(device), "metal") == 0;
+	gpu_is_metal = render_layout_is_metal(device);
 	if (!SDL_ClaimWindowForGPUDevice(device, window)) {
 		SDL_Log("Failed to create swapchain: %s", SDL_GetError());
 		return EXIT_FAILURE;

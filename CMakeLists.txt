@@ -33,6 +33,7 @@ add_executable(blocks WIN32
     src/noise.c
     src/pipeline.c
     src/raycast.c
+    src/render_layout.c
     src/voxel.c
     src/world.c
 )
