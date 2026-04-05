@@ -30,11 +30,13 @@ add_subdirectory(lib/SDL)
 
 add_executable(sdl_gpu_fps_starter WIN32
     src/camera.cpp
+    src/debug.cpp
     src/game.cpp
     src/helpers.cpp
     src/main.cpp
     src/math3d.cpp
     src/mesh.cpp
+    src/render_pass_debug.cpp
     src/render_pass_overlay.cpp
     src/render_pass_scene.cpp
     src/render_pass_shadow.cpp
@@ -90,6 +92,10 @@ function(shader FILE)
     add_dependencies(sdl_gpu_fps_starter ${TARGET_NAME})
 endfunction()
 
+shader(debug_lines.frag)
+shader(debug_lines.vert)
+shader(debug_text.frag)
+shader(debug_text.vert)
 shader(fullscreen.vert)
 shader(overlay.frag)
 shader(scene.frag)

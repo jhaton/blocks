@@ -2,6 +2,7 @@
 #include "config.hpp"
 #include "helpers.hpp"
 #include "math3d.hpp"
+#include "render_pass_debug.hpp"
 #include "render_pass_overlay.hpp"
 #include "render_pass_scene.hpp"
 #include "render_pass_shadow.hpp"
@@ -143,8 +144,9 @@ bool renderer_init(renderer_t* renderer, SDL_Window* window, bool validation) {
 
 	renderer->passes[0] = render_pass_shadow_create();
 	renderer->passes[1] = render_pass_scene_create();
-	renderer->passes[2] = render_pass_overlay_create();
-	renderer->pass_count = 3;
+	renderer->passes[2] = render_pass_debug_create();
+	renderer->passes[3] = render_pass_overlay_create();
+	renderer->pass_count = 4;
 	for (Uint32 i = 0; i < renderer->pass_count; i++) {
 		if (!renderer->passes[i].init(renderer, &renderer->passes[i])) {
 			SDL_Log("Failed to initialize render pass: %s", renderer->passes[i].name);
@@ -178,7 +180,8 @@ void renderer_destroy(renderer_t* renderer) {
 	SDL_zero(*renderer);
 }
 
-void renderer_draw(renderer_t* renderer, const scene_t* scene, const camera_t* camera, float time_seconds) {
+void renderer_draw(renderer_t* renderer, const scene_t* scene, const camera_t* camera, float time_seconds,
+				   starter::DebugState* debug) {
 	assert(renderer);
 	assert(scene);
 	assert(camera);
@@ -208,12 +211,16 @@ void renderer_draw(renderer_t* renderer, const scene_t* scene, const camera_t* c
 	}
 
 	update_shadow_camera(renderer, scene, camera);
+	if (debug) {
+		starter::debug_set_renderer_info(debug, &renderer->shadow_camera, static_cast<int>(renderer->pass_count));
+	}
 
 	frame_context_t frame = {
 		.commands = commands,
 		.swapchain_texture = swapchain_texture,
 		.scene = scene,
 		.camera = camera,
+		.debug = debug,
 		.time_seconds = time_seconds,
 	};
 	for (Uint32 i = 0; i + 1 < renderer->pass_count; i++) {
@@ -239,7 +246,8 @@ void renderer_draw(renderer_t* renderer, const scene_t* scene, const camera_t* c
 	SDL_BlitGPUTexture(commands, &blit);
 
 	SDL_PushGPUDebugGroup(commands, renderer->passes[renderer->pass_count - 1].name);
-	renderer->passes[2].execute(renderer, &renderer->passes[2], &frame);
+	renderer->passes[renderer->pass_count - 1].execute(renderer, &renderer->passes[renderer->pass_count - 1],
+													  &frame);
 	SDL_PopGPUDebugGroup(commands);
 	SDL_SubmitGPUCommandBuffer(commands);
 }

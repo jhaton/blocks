@@ -23,7 +23,7 @@ The starter launches into a stylized graybox arena:
 - a spinning monolith
 - a moving platform driven by a behavior component
 - gravity and fall-reset for the player
-- a simple overlay crosshair
+- a built-in debug overlay and world debug draw toggles
 
 The scene is box-based on purpose so the rendering and entity structure stay easy to read.
 
@@ -35,12 +35,14 @@ The frame is organized as explicit passes in [`renderer.cpp`](/Users/jason/githu
 
 1. `shadow`
 2. `scene`
-3. `overlay`
+3. `debug`
+4. `overlay`
 
 Each pass lives in its own file:
 
 - [`render_pass_shadow.cpp`](/Users/jason/github/jhaton/blocks/src/render_pass_shadow.cpp)
 - [`render_pass_scene.cpp`](/Users/jason/github/jhaton/blocks/src/render_pass_scene.cpp)
+- [`render_pass_debug.cpp`](/Users/jason/github/jhaton/blocks/src/render_pass_debug.cpp)
 - [`render_pass_overlay.cpp`](/Users/jason/github/jhaton/blocks/src/render_pass_overlay.cpp)
 
 To add another pass, copy the same pattern:
@@ -69,14 +71,24 @@ Included starter components:
 - `Oscillator`
 - `Spinner`
 - `PlayerController`
+- `CharacterBody`
 - `Gravity`
 - `Respawn`
+- `BoxCollider`
 
 Included starter systems:
 
+- [`system_physics.cpp`](/Users/jason/github/jhaton/blocks/src/system_physics.cpp)
 - [`system_player.cpp`](/Users/jason/github/jhaton/blocks/src/system_player.cpp)
 - [`system_spinner.cpp`](/Users/jason/github/jhaton/blocks/src/system_spinner.cpp)
 - [`system_oscillator.cpp`](/Users/jason/github/jhaton/blocks/src/system_oscillator.cpp)
+
+Included scene recipes:
+
+- [`scene_spawn_player`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
+- [`scene_spawn_static_solid`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
+- [`scene_spawn_spinning_prop`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
+- [`scene_spawn_moving_platform`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
 
 To add behavior:
 
@@ -106,14 +118,31 @@ player_rotation -0.139626 3.141593
 
 It is intentionally trivial to parse and easy to replace later with a richer format. The clean extension point is the `Game` layer: keep save/load policy in [`game.cpp`](/Users/jason/github/jhaton/blocks/src/game.cpp) and keep the file format logic in [`save.cpp`](/Users/jason/github/jhaton/blocks/src/save.cpp).
 
+### Debugging
+
+Runtime debug state lives in [`debug.hpp`](/Users/jason/github/jhaton/blocks/src/debug.hpp) and [`debug.cpp`](/Users/jason/github/jhaton/blocks/src/debug.cpp).
+
+The template now ships with:
+
+- an in-game text panel for frame, player, entity, and pass state
+- world-space debug drawing for colliders, player body, transforms, and shadow camera direction
+- hotkey toggles so you can inspect one concern at a time without changing code
+
 ## Controls
 
 - `WASD` move on the ground plane
+- `Space` jump
 - mouse look after clicking into the window
 - `LShift` move faster
 - `LCtrl` move slower
 - `Esc` release mouse capture
 - `F11` toggle fullscreen
+- `F1` toggle debug
+- `F2` toggle debug panel
+- `F3` toggle collider draw
+- `F4` toggle player body draw
+- `F6` toggle transform axes
+- `F7` toggle shadow debug draw
 - `F5` save player state
 - `F9` reload player state
 

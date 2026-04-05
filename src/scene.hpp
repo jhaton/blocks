@@ -125,4 +125,13 @@ respawn_component_t* scene_add_respawn(scene_t* scene, entity_t entity);
 box_collider_component_t* scene_add_box_collider(scene_t* scene, entity_t entity);
 const directional_light_component_t* scene_main_light(const scene_t* scene);
 entity_t scene_player(const scene_t* scene);
+entity_t scene_spawn_player(scene_t* scene, const float spawn[3]);
+entity_t scene_spawn_static_solid(scene_t* scene, const char* name, const float position[3],
+								  const float scale[3], const float color[3]);
+entity_t scene_spawn_spinning_prop(scene_t* scene, const char* name, const float position[3],
+								   const float scale[3], const float color[3],
+								   float degrees_per_second);
+entity_t scene_spawn_moving_platform(scene_t* scene, const char* name, const float position[3],
+									 const float scale[3], const float color[3], const float axis[3],
+									 float amplitude, float speed, float phase);
 void scene_build_default(scene_t* scene);

@@ -12,6 +12,7 @@ namespace starter {
 bool Game::init() {
 	scene_build_default(&scene);
 	camera_init(&player_camera, CAMERA_TYPE_PERSPECTIVE);
+	debug_init(&debug);
 	system_player_apply_spawn(&scene, scene_player(&scene), &player_camera);
 	system_player_sync_camera(&scene, scene_player(&scene), &player_camera);
 	return true;
@@ -32,6 +33,7 @@ void Game::request_load() {
 
 void Game::update(const FrameInput& input, float seconds) {
 	elapsed_seconds += seconds;
+	debug_handle_input(&debug, input);
 	if (input.load_requested) {
 		request_load();
 	}
@@ -50,6 +52,7 @@ void Game::update(const FrameInput& input, float seconds) {
 	system_oscillator_update(&scene, elapsed_seconds);
 	system_player_sync_camera(&scene, scene_player(&scene), &player_camera);
 	camera_update(&player_camera);
+	debug_update(&debug, &scene, &player_camera, seconds);
 }
 
 } // namespace starter

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
+#include "debug.hpp"
 #include "scene.hpp"
 #include <SDL3/SDL_gpu.h>
 #include <stdbool.h>
@@ -12,6 +13,7 @@ typedef struct {
 	SDL_GPUTexture* swapchain_texture;
 	const scene_t* scene;
 	const camera_t* camera;
+	starter::DebugState* debug;
 	float time_seconds;
 } frame_context_t;
 

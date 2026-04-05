@@ -6,6 +6,7 @@ layout(location = 0) out vec4 o_color;
 layout(set = 3, binding = 0) uniform overlay_uniforms
 {
     ivec4 u_viewport;
+    ivec4 u_debug_state;
 };
 
 void main()
@@ -19,8 +20,9 @@ void main()
     bool horizontal = abs(frag.x - center.x) <= cross_width && abs(frag.y - center.y) <= cross_thickness;
     bool vertical = abs(frag.y - center.y) <= cross_width && abs(frag.x - center.x) <= cross_thickness;
 
+    float panel_height = max(52.0, 24.0 + float(u_debug_state.z) * 16.0) * scale;
     vec2 panel_min = vec2(18.0, 18.0) * scale;
-    vec2 panel_max = panel_min + vec2(132.0, 42.0) * scale;
+    vec2 panel_max = panel_min + vec2(430.0, panel_height) * scale;
     bool in_panel = frag.x >= panel_min.x && frag.x <= panel_max.x && frag.y >= panel_min.y && frag.y <= panel_max.y;
 
     if (horizontal || vertical)
@@ -29,24 +31,15 @@ void main()
         return;
     }
 
-    if (in_panel)
+    if (u_debug_state.x != 0 && u_debug_state.y != 0 && in_panel)
     {
         float local_x = frag.x - panel_min.x;
         float local_y = frag.y - panel_min.y;
-        vec3 color = vec3(0.14, 0.17, 0.21);
-        if (local_y > 8.0 * scale && local_y < 14.0 * scale)
-        {
-            color = vec3(0.91, 0.73, 0.39);
-        }
-        else if (local_y > 18.0 * scale && local_y < 24.0 * scale)
-        {
-            color = vec3(0.45, 0.72, 0.98);
-        }
-        else if (local_y > 28.0 * scale && local_y < 34.0 * scale)
-        {
-            color = vec3(0.47, 0.82, 0.58);
-        }
-        float alpha = local_x < 118.0 * scale ? 0.65 : 0.0;
+        float border = 2.0 * scale;
+        bool border_hit = local_x <= border || local_x >= (panel_max.x - panel_min.x) - border ||
+            local_y <= border || local_y >= (panel_max.y - panel_min.y) - border;
+        vec3 color = border_hit ? vec3(0.91, 0.73, 0.39) : vec3(0.11, 0.14, 0.18);
+        float alpha = border_hit ? 0.92 : 0.78;
         if (alpha > 0.0)
         {
             o_color = vec4(color, alpha);

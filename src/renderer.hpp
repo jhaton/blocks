@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
+#include "debug.hpp"
 #include "mesh.hpp"
 #include "render_pass.hpp"
 #include "shader.hpp"
@@ -26,10 +27,11 @@ typedef struct renderer {
 	SDL_GPUSampler* linear_sampler;
 	SDL_GPUSampler* shadow_sampler;
 
-	render_pass_t passes[3];
+	render_pass_t passes[4];
 	Uint32 pass_count;
 } renderer_t;
 
 bool renderer_init(renderer_t* renderer, SDL_Window* window, bool validation);
 void renderer_destroy(renderer_t* renderer);
-void renderer_draw(renderer_t* renderer, const scene_t* scene, const camera_t* camera, float time_seconds);
+void renderer_draw(renderer_t* renderer, const scene_t* scene, const camera_t* camera, float time_seconds,
+				   starter::DebugState* debug);

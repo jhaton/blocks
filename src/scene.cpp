@@ -158,8 +158,8 @@ entity_t scene_player(const scene_t* scene) {
 	return scene->player;
 }
 
-static entity_t add_box(scene_t* scene, const char* name, const float position[3], const float scale[3],
-						const float color[3]) {
+entity_t scene_spawn_static_solid(scene_t* scene, const char* name, const float position[3],
+								  const float scale[3], const float color[3]) {
 	entity_t entity = scene_create(scene, name);
 	transform_component_t* transform = scene_add_transform(scene, entity);
 	renderable_component_t* renderable = scene_add_renderable(scene, entity);
@@ -169,6 +169,41 @@ static entity_t add_box(scene_t* scene, const char* name, const float position[3
 	SDL_memcpy(renderable->color, color, sizeof(renderable->color));
 	SDL_memcpy(collider->half_extents, scale, sizeof(collider->half_extents));
 	return entity;
+}
+
+entity_t scene_spawn_spinning_prop(scene_t* scene, const char* name, const float position[3],
+								   const float scale[3], const float color[3],
+								   float degrees_per_second) {
+	entity_t entity = scene_spawn_static_solid(scene, name, position, scale, color);
+	scene_add_spinner(scene, entity)->degrees_per_second = degrees_per_second;
+	return entity;
+}
+
+entity_t scene_spawn_moving_platform(scene_t* scene, const char* name, const float position[3],
+									 const float scale[3], const float color[3], const float axis[3],
+									 float amplitude, float speed, float phase) {
+	entity_t entity = scene_spawn_static_solid(scene, name, position, scale, color);
+	oscillator_component_t* oscillator = scene_add_oscillator(scene, entity);
+	SDL_memcpy(oscillator->origin, position, sizeof(oscillator->origin));
+	SDL_memcpy(oscillator->axis, axis, sizeof(oscillator->axis));
+	oscillator->amplitude = amplitude;
+	oscillator->speed = speed;
+	oscillator->phase = phase;
+	return entity;
+}
+
+entity_t scene_spawn_player(scene_t* scene, const float spawn[3]) {
+	entity_t player = scene_create(scene, "player");
+	transform_component_t* transform = scene_add_transform(scene, player);
+	character_body_component_t* body = scene_add_character_body(scene, player);
+	scene_add_player_controller(scene, player);
+	gravity_component_t* gravity = scene_add_gravity(scene, player);
+	respawn_component_t* respawn = scene_add_respawn(scene, player);
+	SDL_memcpy(respawn->spawn, spawn, sizeof(respawn->spawn));
+	SDL_memcpy(transform->position, spawn, sizeof(transform->position));
+	SDL_memcpy(body->previous_position, transform->position, sizeof(body->previous_position));
+	gravity->grounded = true;
+	return player;
 }
 
 void scene_build_default(scene_t* scene) {
@@ -184,15 +219,8 @@ void scene_build_default(scene_t* scene) {
 	entity_t sun = scene_create(scene, "sun");
 	scene_add_directional_light(scene, sun);
 
-	entity_t player = scene_create(scene, "player");
-	transform_component_t* player_transform = scene_add_transform(scene, player);
-	player_controller_component_t* controller = scene_add_player_controller(scene, player);
-	character_body_component_t* body = scene_add_character_body(scene, player);
-	gravity_component_t* gravity = scene_add_gravity(scene, player);
-	respawn_component_t* respawn = scene_add_respawn(scene, player);
-	math3d_vec3_copy(player_transform->position, respawn->spawn);
-	math3d_vec3_copy(body->previous_position, player_transform->position);
-	gravity->grounded = true;
+	const float player_spawn[3] = {0.0f, starter::config::kPlayerHeight, 28.0f};
+	scene_spawn_player(scene, player_spawn);
 
 	const float floor_position[3] = {0.0f, -0.5f, 0.0f};
 	const float floor_scale[3] = {60.0f, 1.0f, 60.0f};
@@ -221,30 +249,23 @@ void scene_build_default(scene_t* scene) {
 	const float cover3_position[3] = {28.0f, 2.2f, 22.0f};
 	const float cover3_scale[3] = {8.0f, 4.0f, 4.0f};
 
-	add_box(scene, "floor", floor_position, floor_scale, sand);
-	add_box(scene, "back_wall", back_wall_position, back_wall_scale, slate);
-	add_box(scene, "front_wall", front_wall_position, front_wall_scale, slate);
-	add_box(scene, "left_wall", left_wall_position, left_wall_scale, slate);
-	add_box(scene, "right_wall", right_wall_position, right_wall_scale, slate);
+	scene_spawn_static_solid(scene, "floor", floor_position, floor_scale, sand);
+	scene_spawn_static_solid(scene, "back_wall", back_wall_position, back_wall_scale, slate);
+	scene_spawn_static_solid(scene, "front_wall", front_wall_position, front_wall_scale, slate);
+	scene_spawn_static_solid(scene, "left_wall", left_wall_position, left_wall_scale, slate);
+	scene_spawn_static_solid(scene, "right_wall", right_wall_position, right_wall_scale, slate);
 
-	add_box(scene, "platform_a", platform_a_position, platform_a_scale, moss);
-	add_box(scene, "platform_b", platform_b_position, platform_b_scale, sky);
+	scene_spawn_static_solid(scene, "platform_a", platform_a_position, platform_a_scale, moss);
+	scene_spawn_static_solid(scene, "platform_b", platform_b_position, platform_b_scale, sky);
 
-	entity_t moving = add_box(scene, "moving_block", moving_position, moving_scale, coral);
-	oscillator_component_t* oscillator = scene_add_oscillator(scene, moving);
-	math3d_vec3_set(oscillator->origin, 0.0f, 3.0f, -26.0f);
-	math3d_vec3_set(oscillator->axis, 1.0f, 0.0f, 0.0f);
-	oscillator->amplitude = 18.0f;
-	oscillator->speed = 0.8f;
-	oscillator->phase = rad(45.0f);
+	const float moving_axis[3] = {1.0f, 0.0f, 0.0f};
+	scene_spawn_moving_platform(scene, "moving_block", moving_position, moving_scale, coral, moving_axis,
+								18.0f, 0.8f, rad(45.0f));
 
-	entity_t monolith = add_box(scene, "monolith", monolith_position, monolith_scale, slate);
-	scene_add_spinner(scene, monolith)->degrees_per_second = 18.0f;
+	scene_spawn_spinning_prop(scene, "monolith", monolith_position, monolith_scale, slate, 18.0f);
+	scene_spawn_spinning_prop(scene, "beacon", beacon_position, beacon_scale, sky, -26.0f);
 
-	entity_t beacon = add_box(scene, "beacon", beacon_position, beacon_scale, sky);
-	scene_add_spinner(scene, beacon)->degrees_per_second = -26.0f;
-
-	add_box(scene, "cover_1", cover1_position, cover1_scale, moss);
-	add_box(scene, "cover_2", cover2_position, cover2_scale, coral);
-	add_box(scene, "cover_3", cover3_position, cover3_scale, sky);
+	scene_spawn_static_solid(scene, "cover_1", cover1_position, cover1_scale, moss);
+	scene_spawn_static_solid(scene, "cover_2", cover2_position, cover2_scale, coral);
+	scene_spawn_static_solid(scene, "cover_3", cover3_position, cover3_scale, sky);
 }

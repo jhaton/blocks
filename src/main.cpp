@@ -62,6 +62,24 @@ static FrameInput app_poll(app_t* app) {
 			case SDL_SCANCODE_F5:
 				input.save_requested = true;
 				break;
+			case SDL_SCANCODE_F1:
+				input.toggle_debug_requested = true;
+				break;
+			case SDL_SCANCODE_F2:
+				input.toggle_debug_panel_requested = true;
+				break;
+			case SDL_SCANCODE_F3:
+				input.toggle_debug_colliders_requested = true;
+				break;
+			case SDL_SCANCODE_F4:
+				input.toggle_debug_player_requested = true;
+				break;
+			case SDL_SCANCODE_F6:
+				input.toggle_debug_axes_requested = true;
+				break;
+			case SDL_SCANCODE_F7:
+				input.toggle_debug_shadow_requested = true;
+				break;
 			case SDL_SCANCODE_F9:
 				input.load_requested = true;
 				break;
@@ -183,7 +201,8 @@ int main(int argc, char** argv) {
 			input.jump_requested = false;
 		}
 		app.game.update(input, seconds);
-		renderer_draw(&app.renderer, &app.game.scene, &app.game.player_camera, app.game.elapsed_seconds);
+		renderer_draw(&app.renderer, &app.game.scene, &app.game.player_camera, app.game.elapsed_seconds,
+					  &app.game.debug);
 	}
 
 	starter::app_shutdown(&app);

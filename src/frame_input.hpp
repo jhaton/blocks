@@ -9,6 +9,12 @@ struct FrameInput {
 	bool toggle_fullscreen_requested = false;
 	bool save_requested = false;
 	bool load_requested = false;
+	bool toggle_debug_requested = false;
+	bool toggle_debug_panel_requested = false;
+	bool toggle_debug_colliders_requested = false;
+	bool toggle_debug_player_requested = false;
+	bool toggle_debug_axes_requested = false;
+	bool toggle_debug_shadow_requested = false;
 
 	bool move_forward = false;
 	bool move_backward = false;
