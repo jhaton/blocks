@@ -14,6 +14,7 @@ void scene_init(scene_t* scene) {
 	assert(scene);
 	SDL_zero(*scene);
 	scene->sun = UINT32_MAX;
+	scene->player = UINT32_MAX;
 }
 
 entity_t scene_create(scene_t* scene, const char* name) {
@@ -86,12 +87,52 @@ spinner_component_t* scene_add_spinner(scene_t* scene, entity_t entity) {
 	return spinner;
 }
 
+player_controller_component_t* scene_add_player_controller(scene_t* scene, entity_t entity) {
+	assert(scene);
+	assert(entity < SCENE_MAX_ENTITIES);
+	scene->has_player_controller[entity] = true;
+	player_controller_component_t* controller = &scene->player_controllers[entity];
+	controller->move_speed = PLAYER_MOVE_SPEED;
+	controller->fast_multiplier = PLAYER_FAST_MULTIPLIER;
+	controller->slow_multiplier = PLAYER_SLOW_MULTIPLIER;
+	controller->eye_height = PLAYER_HEIGHT;
+	scene->player = entity;
+	return controller;
+}
+
+gravity_component_t* scene_add_gravity(scene_t* scene, entity_t entity) {
+	assert(scene);
+	assert(entity < SCENE_MAX_ENTITIES);
+	scene->has_gravity[entity] = true;
+	gravity_component_t* gravity = &scene->gravities[entity];
+	gravity->velocity_y = 0.0f;
+	gravity->gravity = PLAYER_GRAVITY;
+	gravity->grounded = true;
+	return gravity;
+}
+
+respawn_component_t* scene_add_respawn(scene_t* scene, entity_t entity) {
+	assert(scene);
+	assert(entity < SCENE_MAX_ENTITIES);
+	scene->has_respawn[entity] = true;
+	respawn_component_t* respawn = &scene->respawns[entity];
+	math3d_vec3_set(respawn->spawn, 0.0f, PLAYER_HEIGHT, 38.0f);
+	respawn->ground_y = PLAYER_GROUND_Y;
+	respawn->reset_y = PLAYER_RESET_Y;
+	return respawn;
+}
+
 const directional_light_component_t* scene_main_light(const scene_t* scene) {
 	assert(scene);
 	if (scene->sun >= SCENE_MAX_ENTITIES || !scene->has_light[scene->sun]) {
 		return NULL;
 	}
 	return &scene->lights[scene->sun];
+}
+
+entity_t scene_player(const scene_t* scene) {
+	assert(scene);
+	return scene->player;
 }
 
 void scene_update(scene_t* scene, float seconds) {
@@ -139,6 +180,15 @@ void scene_build_default(scene_t* scene) {
 
 	entity_t sun = scene_create(scene, "sun");
 	scene_add_directional_light(scene, sun);
+
+	entity_t player = scene_create(scene, "player");
+	transform_component_t* player_transform = scene_add_transform(scene, player);
+	player_controller_component_t* controller = scene_add_player_controller(scene, player);
+	gravity_component_t* gravity = scene_add_gravity(scene, player);
+	respawn_component_t* respawn = scene_add_respawn(scene, player);
+	math3d_vec3_copy(player_transform->position, respawn->spawn);
+	player_transform->position[1] = respawn->ground_y + controller->eye_height;
+	gravity->grounded = true;
 
 	add_box(scene, "floor", (float[]){0.0f, -0.5f, 0.0f}, (float[]){60.0f, 1.0f, 60.0f}, sand);
 	add_box(scene, "back_wall", (float[]){0.0f, 4.0f, -60.0f}, (float[]){60.0f, 9.0f, 1.0f}, slate);

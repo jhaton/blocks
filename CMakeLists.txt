@@ -38,6 +38,7 @@ add_executable(sdl_gpu_fps_starter WIN32
     src/save.c
     src/scene.c
     src/shader.c
+    src/system_player.c
 )
 
 target_link_libraries(sdl_gpu_fps_starter PUBLIC SDL3::SDL3)

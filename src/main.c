@@ -4,6 +4,7 @@
 #include "renderer.h"
 #include "save.h"
 #include "scene.h"
+#include "system_player.h"
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -22,12 +23,6 @@ static void app_toggle_mouse_capture(app_t* app, bool enabled) {
 	assert(app);
 	app->relative_mouse = enabled;
 	SDL_SetWindowRelativeMouseMode(app->window, enabled);
-}
-
-static void app_apply_default_player_spawn(app_t* app) {
-	assert(app);
-	camera_set_position(&app->player_camera, 0.0f, PLAYER_HEIGHT, 38.0f);
-	camera_set_rotation(&app->player_camera, rad(-6.0f), rad(0.0f));
 }
 
 static bool app_init(app_t* app) {
@@ -51,8 +46,11 @@ static bool app_init(app_t* app) {
 
 	scene_build_default(&app->scene);
 	camera_init(&app->player_camera, CAMERA_TYPE_PERSPECTIVE);
-	app_apply_default_player_spawn(app);
-	save_load_player(SAVE_PATH, &app->player_camera);
+	system_player_apply_spawn(&app->scene, scene_player(&app->scene), &app->player_camera);
+	if (save_load_player(SAVE_PATH, &app->player_camera)) {
+		system_player_capture_camera(&app->scene, scene_player(&app->scene), &app->player_camera);
+	}
+	system_player_sync_camera(&app->scene, scene_player(&app->scene), &app->player_camera);
 
 	int width = 0;
 	int height = 0;
@@ -95,8 +93,11 @@ static void app_handle_keydown(app_t* app, const SDL_KeyboardEvent* key) {
 		break;
 	case SDL_SCANCODE_F9:
 		if (!save_load_player(SAVE_PATH, &app->player_camera)) {
-			app_apply_default_player_spawn(app);
+			system_player_apply_spawn(&app->scene, scene_player(&app->scene), &app->player_camera);
+		} else {
+			system_player_capture_camera(&app->scene, scene_player(&app->scene), &app->player_camera);
 		}
+		system_player_sync_camera(&app->scene, scene_player(&app->scene), &app->player_camera);
 		break;
 	default:
 		break;
@@ -137,38 +138,8 @@ static void app_move_player(app_t* app, float seconds) {
 	if (!app->relative_mouse) {
 		return;
 	}
-
-	const bool* keys = SDL_GetKeyboardState(NULL);
-	float x = 0.0f;
-	float y = 0.0f;
-	float z = 0.0f;
-	if (keys[SDL_SCANCODE_W]) {
-		z += 1.0f;
-	}
-	if (keys[SDL_SCANCODE_S]) {
-		z -= 1.0f;
-	}
-	if (keys[SDL_SCANCODE_A]) {
-		x -= 1.0f;
-	}
-	if (keys[SDL_SCANCODE_D]) {
-		x += 1.0f;
-	}
-	if (keys[SDL_SCANCODE_E]) {
-		y += 1.0f;
-	}
-	if (keys[SDL_SCANCODE_Q]) {
-		y -= 1.0f;
-	}
-
-	float speed = PLAYER_MOVE_SPEED;
-	if (keys[SDL_SCANCODE_LSHIFT]) {
-		speed *= PLAYER_FAST_MULTIPLIER;
-	}
-	if (keys[SDL_SCANCODE_LCTRL]) {
-		speed *= PLAYER_SLOW_MULTIPLIER;
-	}
-	camera_move(&app->player_camera, x * speed * seconds, y * speed * seconds, z * speed * seconds);
+	system_player_move(&app->scene, scene_player(&app->scene), &app->player_camera,
+					   SDL_GetKeyboardState(NULL), seconds);
 }
 
 int main(int argc, char** argv) {
@@ -191,6 +162,9 @@ int main(int argc, char** argv) {
 
 		app_poll(&app);
 		app_move_player(&app, seconds);
+		system_player_apply_gravity(&app.scene, scene_player(&app.scene), seconds);
+		system_player_respawn(&app.scene, scene_player(&app.scene), &app.player_camera);
+		system_player_sync_camera(&app.scene, scene_player(&app.scene), &app.player_camera);
 		scene_update(&app.scene, seconds);
 		camera_update(&app.player_camera);
 		renderer_draw(&app.renderer, &app.scene, &app.player_camera, app.elapsed_seconds);

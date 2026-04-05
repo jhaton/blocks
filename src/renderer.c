@@ -101,7 +101,9 @@ static void update_shadow_camera(renderer_t* renderer, const scene_t* scene, con
 	float direction[3] = {light->direction[0], light->direction[1], light->direction[2]};
 	math3d_vec3_normalize(direction);
 
-	camera_set_rotation(&renderer->shadow_camera, asinf(-direction[1]), atan2f(direction[0], direction[2]));
+	const float pitch = asinf(direction[1]);
+	const float yaw = atan2f(direction[0], -direction[2]);
+	camera_set_rotation(&renderer->shadow_camera, pitch, yaw);
 	camera_set_position(&renderer->shadow_camera,
 						focus[0] - direction[0] * SHADOW_DISTANCE,
 						SHADOW_CAMERA_HEIGHT - direction[1] * SHADOW_DISTANCE,
