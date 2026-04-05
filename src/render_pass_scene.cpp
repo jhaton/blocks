@@ -1,9 +1,9 @@
-#include "render_pass_scene.h"
-#include "helpers.h"
-#include "math3d.h"
-#include "mesh.h"
-#include "renderer.h"
-#include "shader.h"
+#include "render_pass_scene.hpp"
+#include "helpers.hpp"
+#include "math3d.hpp"
+#include "mesh.hpp"
+#include "renderer.hpp"
+#include "shader.hpp"
 
 typedef struct {
 	SDL_GPUGraphicsPipeline* pipeline;
@@ -23,18 +23,12 @@ typedef struct {
 } scene_fragment_uniforms_t;
 
 static bool scene_pass_init(renderer_t* renderer, render_pass_t* pass) {
-	scene_pass_state_t* state = SDL_calloc(1, sizeof(*state));
+	scene_pass_state_t* state = static_cast<scene_pass_state_t*>(SDL_calloc(1, sizeof(*state)));
 	if (!state) {
 		return false;
 	}
-	SDL_GPUShader* vertex = shader_library_load(&renderer->shaders, "scene.vert",
-											 SDL_GPU_SHADERSTAGE_VERTEX, 1, 0);
-	SDL_GPUShader* fragment = shader_library_load(&renderer->shaders, "scene.frag",
-											   SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
-	if (!vertex || !fragment) {
-		goto fail;
-	}
-
+	SDL_GPUShader* vertex = nullptr;
+	SDL_GPUShader* fragment = nullptr;
 	SDL_GPUVertexBufferDescription vertex_buffer = {
 		.slot = 0,
 		.pitch = sizeof(float) * 6,
@@ -54,33 +48,33 @@ static bool scene_pass_init(renderer_t* renderer, render_pass_t* pass) {
 			.offset = sizeof(float) * 3,
 		},
 	};
-	SDL_GPUGraphicsPipelineCreateInfo info = {
-		.vertex_shader = vertex,
-		.fragment_shader = fragment,
-		.target_info = {
-			.num_color_targets = 1,
-			.color_target_descriptions = (SDL_GPUColorTargetDescription[]) {{
-				.format = renderer->scene_color_format,
-			}},
-			.has_depth_stencil_target = true,
-			.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT,
-		},
-		.vertex_input_state = {
-			.vertex_buffer_descriptions = &vertex_buffer,
-			.num_vertex_buffers = 1,
-			.vertex_attributes = attributes,
-			.num_vertex_attributes = SDL_arraysize(attributes),
-		},
-		.depth_stencil_state = {
-			.enable_depth_test = true,
-			.enable_depth_write = true,
-			.compare_op = SDL_GPU_COMPAREOP_LESS,
-		},
-		.rasterizer_state = {
-			.cull_mode = SDL_GPU_CULLMODE_BACK,
-			.front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE,
-		},
+	SDL_GPUColorTargetDescription color_target = {
+		.format = renderer->scene_color_format,
 	};
+	SDL_GPUGraphicsPipelineCreateInfo info = {};
+
+	vertex = shader_library_load(&renderer->shaders, "scene.vert", SDL_GPU_SHADERSTAGE_VERTEX, 1, 0);
+	fragment =
+		shader_library_load(&renderer->shaders, "scene.frag", SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+	if (!vertex || !fragment) {
+		goto fail;
+	}
+
+	info.vertex_shader = vertex;
+	info.fragment_shader = fragment;
+	info.target_info.num_color_targets = 1;
+	info.target_info.color_target_descriptions = &color_target;
+	info.target_info.has_depth_stencil_target = true;
+	info.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
+	info.vertex_input_state.vertex_buffer_descriptions = &vertex_buffer;
+	info.vertex_input_state.num_vertex_buffers = 1;
+	info.vertex_input_state.vertex_attributes = attributes;
+	info.vertex_input_state.num_vertex_attributes = SDL_arraysize(attributes);
+	info.depth_stencil_state.enable_depth_test = true;
+	info.depth_stencil_state.enable_depth_write = true;
+	info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS;
+	info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_BACK;
+	info.rasterizer_state.front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE;
 	state->pipeline = SDL_CreateGPUGraphicsPipeline(renderer->device, &info);
 	if (!check_resource(state->pipeline, "create scene pipeline")) {
 		goto fail;
@@ -110,7 +104,7 @@ static void scene_pass_resize(renderer_t* renderer, render_pass_t* pass, Uint32 
 }
 
 static void scene_pass_execute(renderer_t* renderer, render_pass_t* pass, const frame_context_t* frame) {
-	scene_pass_state_t* state = pass->state;
+	scene_pass_state_t* state = static_cast<scene_pass_state_t*>(pass->state);
 	const directional_light_component_t* light = scene_main_light(frame->scene);
 	if (!light) {
 		SDL_Log("Scene pass requires a main directional light");
@@ -145,7 +139,7 @@ static void scene_pass_execute(renderer_t* renderer, render_pass_t* pass, const 
 	SDL_BindGPUFragmentSamplers(render_pass, 0, &shadow_binding, 1);
 	mesh_library_bind_box(&renderer->meshes, render_pass);
 
-	for (entity_t entity = 0; entity < SCENE_MAX_ENTITIES; entity++) {
+	for (entity_t entity = 0; entity < starter::config::kSceneMaxEntities; entity++) {
 		if (!frame->scene->alive[entity] || !frame->scene->has_transform[entity] ||
 			!frame->scene->has_renderable[entity]) {
 			continue;
@@ -179,7 +173,7 @@ static void scene_pass_execute(renderer_t* renderer, render_pass_t* pass, const 
 }
 
 static void scene_pass_destroy(renderer_t* renderer, render_pass_t* pass) {
-	scene_pass_state_t* state = pass->state;
+	scene_pass_state_t* state = static_cast<scene_pass_state_t*>(pass->state);
 	if (state) {
 		if (state->pipeline) {
 			SDL_ReleaseGPUGraphicsPipeline(renderer->device, state->pipeline);

@@ -1,7 +1,7 @@
-#include "scene.h"
-#include "helpers.h"
-#include "math3d.h"
-#include <math.h>
+#include "scene.hpp"
+#include "config.hpp"
+#include "helpers.hpp"
+#include "math3d.hpp"
 
 static void set_default_transform(transform_component_t* transform) {
 	assert(transform);
@@ -20,7 +20,7 @@ void scene_init(scene_t* scene) {
 entity_t scene_create(scene_t* scene, const char* name) {
 	assert(scene);
 	assert(name);
-	for (entity_t entity = 0; entity < SCENE_MAX_ENTITIES; entity++) {
+	for (entity_t entity = 0; entity < starter::config::kSceneMaxEntities; entity++) {
 		if (scene->alive[entity]) {
 			continue;
 		}
@@ -35,7 +35,7 @@ entity_t scene_create(scene_t* scene, const char* name) {
 
 transform_component_t* scene_add_transform(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_transform[entity] = true;
 	set_default_transform(&scene->transforms[entity]);
 	return &scene->transforms[entity];
@@ -43,7 +43,7 @@ transform_component_t* scene_add_transform(scene_t* scene, entity_t entity) {
 
 renderable_component_t* scene_add_renderable(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_renderable[entity] = true;
 	renderable_component_t* renderable = &scene->renderables[entity];
 	renderable->mesh = MESH_BOX;
@@ -54,7 +54,7 @@ renderable_component_t* scene_add_renderable(scene_t* scene, entity_t entity) {
 
 directional_light_component_t* scene_add_directional_light(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_light[entity] = true;
 	scene->sun = entity;
 	directional_light_component_t* light = &scene->lights[entity];
@@ -67,7 +67,7 @@ directional_light_component_t* scene_add_directional_light(scene_t* scene, entit
 
 oscillator_component_t* scene_add_oscillator(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_oscillator[entity] = true;
 	oscillator_component_t* oscillator = &scene->oscillators[entity];
 	math3d_vec3_set(oscillator->origin, 0.0f, 0.0f, 0.0f);
@@ -80,7 +80,7 @@ oscillator_component_t* scene_add_oscillator(scene_t* scene, entity_t entity) {
 
 spinner_component_t* scene_add_spinner(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_spinner[entity] = true;
 	spinner_component_t* spinner = &scene->spinners[entity];
 	spinner->degrees_per_second = 35.0f;
@@ -89,42 +89,42 @@ spinner_component_t* scene_add_spinner(scene_t* scene, entity_t entity) {
 
 player_controller_component_t* scene_add_player_controller(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_player_controller[entity] = true;
 	player_controller_component_t* controller = &scene->player_controllers[entity];
-	controller->move_speed = PLAYER_MOVE_SPEED;
-	controller->fast_multiplier = PLAYER_FAST_MULTIPLIER;
-	controller->slow_multiplier = PLAYER_SLOW_MULTIPLIER;
-	controller->eye_height = PLAYER_HEIGHT;
+	controller->move_speed = starter::config::kPlayerMoveSpeed;
+	controller->fast_multiplier = starter::config::kPlayerFastMultiplier;
+	controller->slow_multiplier = starter::config::kPlayerSlowMultiplier;
+	controller->eye_height = starter::config::kPlayerHeight;
 	scene->player = entity;
 	return controller;
 }
 
 gravity_component_t* scene_add_gravity(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_gravity[entity] = true;
 	gravity_component_t* gravity = &scene->gravities[entity];
 	gravity->velocity_y = 0.0f;
-	gravity->gravity = PLAYER_GRAVITY;
+	gravity->gravity = starter::config::kPlayerGravity;
 	gravity->grounded = true;
 	return gravity;
 }
 
 respawn_component_t* scene_add_respawn(scene_t* scene, entity_t entity) {
 	assert(scene);
-	assert(entity < SCENE_MAX_ENTITIES);
+	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_respawn[entity] = true;
 	respawn_component_t* respawn = &scene->respawns[entity];
-	math3d_vec3_set(respawn->spawn, 0.0f, PLAYER_HEIGHT, 38.0f);
-	respawn->ground_y = PLAYER_GROUND_Y;
-	respawn->reset_y = PLAYER_RESET_Y;
+	math3d_vec3_set(respawn->spawn, 0.0f, starter::config::kPlayerHeight, 38.0f);
+	respawn->ground_y = starter::config::kPlayerGroundY;
+	respawn->reset_y = starter::config::kPlayerResetY;
 	return respawn;
 }
 
 const directional_light_component_t* scene_main_light(const scene_t* scene) {
 	assert(scene);
-	if (scene->sun >= SCENE_MAX_ENTITIES || !scene->has_light[scene->sun]) {
+	if (scene->sun >= starter::config::kSceneMaxEntities || !scene->has_light[scene->sun]) {
 		return NULL;
 	}
 	return &scene->lights[scene->sun];
@@ -133,28 +133,6 @@ const directional_light_component_t* scene_main_light(const scene_t* scene) {
 entity_t scene_player(const scene_t* scene) {
 	assert(scene);
 	return scene->player;
-}
-
-void scene_update(scene_t* scene, float seconds) {
-	assert(scene);
-	for (entity_t entity = 0; entity < SCENE_MAX_ENTITIES; entity++) {
-		if (!scene->alive[entity] || !scene->has_transform[entity]) {
-			continue;
-		}
-		transform_component_t* transform = &scene->transforms[entity];
-		if (scene->has_spinner[entity]) {
-			const spinner_component_t* spinner = &scene->spinners[entity];
-			transform->rotation[1] += rad(spinner->degrees_per_second) * seconds;
-		}
-		if (scene->has_oscillator[entity]) {
-			const oscillator_component_t* oscillator = &scene->oscillators[entity];
-			const float wave = sinf(SDL_GetTicks() * 0.001f * oscillator->speed + oscillator->phase);
-			for (int i = 0; i < 3; i++) {
-				transform->position[i] =
-					oscillator->origin[i] + oscillator->axis[i] * oscillator->amplitude * wave;
-			}
-		}
-	}
 }
 
 static entity_t add_box(scene_t* scene, const char* name, const float position[3], const float scale[3],
@@ -190,17 +168,43 @@ void scene_build_default(scene_t* scene) {
 	player_transform->position[1] = respawn->ground_y + controller->eye_height;
 	gravity->grounded = true;
 
-	add_box(scene, "floor", (float[]){0.0f, -0.5f, 0.0f}, (float[]){60.0f, 1.0f, 60.0f}, sand);
-	add_box(scene, "back_wall", (float[]){0.0f, 4.0f, -60.0f}, (float[]){60.0f, 9.0f, 1.0f}, slate);
-	add_box(scene, "front_wall", (float[]){0.0f, 4.0f, 60.0f}, (float[]){60.0f, 9.0f, 1.0f}, slate);
-	add_box(scene, "left_wall", (float[]){-60.0f, 4.0f, 0.0f}, (float[]){1.0f, 9.0f, 60.0f}, slate);
-	add_box(scene, "right_wall", (float[]){60.0f, 4.0f, 0.0f}, (float[]){1.0f, 9.0f, 60.0f}, slate);
+	const float floor_position[3] = {0.0f, -0.5f, 0.0f};
+	const float floor_scale[3] = {60.0f, 1.0f, 60.0f};
+	const float back_wall_position[3] = {0.0f, 4.0f, -60.0f};
+	const float back_wall_scale[3] = {60.0f, 9.0f, 1.0f};
+	const float front_wall_position[3] = {0.0f, 4.0f, 60.0f};
+	const float front_wall_scale[3] = {60.0f, 9.0f, 1.0f};
+	const float left_wall_position[3] = {-60.0f, 4.0f, 0.0f};
+	const float left_wall_scale[3] = {1.0f, 9.0f, 60.0f};
+	const float right_wall_position[3] = {60.0f, 4.0f, 0.0f};
+	const float right_wall_scale[3] = {1.0f, 9.0f, 60.0f};
+	const float platform_a_position[3] = {-20.0f, 1.4f, -12.0f};
+	const float platform_a_scale[3] = {8.0f, 0.8f, 8.0f};
+	const float platform_b_position[3] = {18.0f, 2.0f, 15.0f};
+	const float platform_b_scale[3] = {7.0f, 0.8f, 12.0f};
+	const float moving_position[3] = {0.0f, 3.0f, -26.0f};
+	const float moving_scale[3] = {5.0f, 0.5f, 5.0f};
+	const float monolith_position[3] = {0.0f, 5.0f, 0.0f};
+	const float monolith_scale[3] = {4.0f, 10.0f, 4.0f};
+	const float beacon_position[3] = {24.0f, 6.5f, -24.0f};
+	const float beacon_scale[3] = {2.0f, 13.0f, 2.0f};
+	const float cover1_position[3] = {-24.0f, 2.5f, 20.0f};
+	const float cover1_scale[3] = {5.0f, 5.0f, 5.0f};
+	const float cover2_position[3] = {-8.0f, 1.8f, 30.0f};
+	const float cover2_scale[3] = {3.0f, 3.0f, 10.0f};
+	const float cover3_position[3] = {28.0f, 2.2f, 22.0f};
+	const float cover3_scale[3] = {8.0f, 4.0f, 4.0f};
 
-	add_box(scene, "platform_a", (float[]){-20.0f, 1.4f, -12.0f}, (float[]){8.0f, 0.8f, 8.0f}, moss);
-	add_box(scene, "platform_b", (float[]){18.0f, 2.0f, 15.0f}, (float[]){7.0f, 0.8f, 12.0f}, sky);
+	add_box(scene, "floor", floor_position, floor_scale, sand);
+	add_box(scene, "back_wall", back_wall_position, back_wall_scale, slate);
+	add_box(scene, "front_wall", front_wall_position, front_wall_scale, slate);
+	add_box(scene, "left_wall", left_wall_position, left_wall_scale, slate);
+	add_box(scene, "right_wall", right_wall_position, right_wall_scale, slate);
 
-	entity_t moving = add_box(scene, "moving_block", (float[]){0.0f, 3.0f, -26.0f},
-							  (float[]){5.0f, 0.5f, 5.0f}, coral);
+	add_box(scene, "platform_a", platform_a_position, platform_a_scale, moss);
+	add_box(scene, "platform_b", platform_b_position, platform_b_scale, sky);
+
+	entity_t moving = add_box(scene, "moving_block", moving_position, moving_scale, coral);
 	oscillator_component_t* oscillator = scene_add_oscillator(scene, moving);
 	math3d_vec3_set(oscillator->origin, 0.0f, 3.0f, -26.0f);
 	math3d_vec3_set(oscillator->axis, 1.0f, 0.0f, 0.0f);
@@ -208,15 +212,13 @@ void scene_build_default(scene_t* scene) {
 	oscillator->speed = 0.8f;
 	oscillator->phase = rad(45.0f);
 
-	entity_t monolith = add_box(scene, "monolith", (float[]){0.0f, 5.0f, 0.0f},
-								(float[]){4.0f, 10.0f, 4.0f}, slate);
+	entity_t monolith = add_box(scene, "monolith", monolith_position, monolith_scale, slate);
 	scene_add_spinner(scene, monolith)->degrees_per_second = 18.0f;
 
-	entity_t beacon = add_box(scene, "beacon", (float[]){24.0f, 6.5f, -24.0f},
-							  (float[]){2.0f, 13.0f, 2.0f}, sky);
+	entity_t beacon = add_box(scene, "beacon", beacon_position, beacon_scale, sky);
 	scene_add_spinner(scene, beacon)->degrees_per_second = -26.0f;
 
-	add_box(scene, "cover_1", (float[]){-24.0f, 2.5f, 20.0f}, (float[]){5.0f, 5.0f, 5.0f}, moss);
-	add_box(scene, "cover_2", (float[]){-8.0f, 1.8f, 30.0f}, (float[]){3.0f, 3.0f, 10.0f}, coral);
-	add_box(scene, "cover_3", (float[]){28.0f, 2.2f, 22.0f}, (float[]){8.0f, 4.0f, 4.0f}, sky);
+	add_box(scene, "cover_1", cover1_position, cover1_scale, moss);
+	add_box(scene, "cover_2", cover2_position, cover2_scale, coral);
+	add_box(scene, "cover_3", cover3_position, cover3_scale, sky);
 }

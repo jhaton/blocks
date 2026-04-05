@@ -1,5 +1,5 @@
-#include "save.h"
-#include "helpers.h"
+#include "save.hpp"
+#include "helpers.hpp"
 #include <stdio.h>
 
 bool save_load_player(const char* path, camera_t* camera) {

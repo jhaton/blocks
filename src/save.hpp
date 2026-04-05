@@ -1,6 +1,6 @@
 #pragma once
 
-#include "camera.h"
+#include "camera.hpp"
 #include <stdbool.h>
 
 bool save_load_player(const char* path, camera_t* camera);

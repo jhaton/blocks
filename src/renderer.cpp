@@ -1,10 +1,10 @@
-#include "renderer.h"
-#include "config.h"
-#include "helpers.h"
-#include "math3d.h"
-#include "render_pass_overlay.h"
-#include "render_pass_scene.h"
-#include "render_pass_shadow.h"
+#include "renderer.hpp"
+#include "config.hpp"
+#include "helpers.hpp"
+#include "math3d.hpp"
+#include "render_pass_overlay.hpp"
+#include "render_pass_scene.hpp"
+#include "render_pass_shadow.hpp"
 #include <math.h>
 
 static bool create_samplers(renderer_t* renderer) {
@@ -49,8 +49,8 @@ static bool create_textures(renderer_t* renderer, Uint32 width, Uint32 height) {
 	SDL_GPUTextureCreateInfo shadow_info = {
 		.type = SDL_GPU_TEXTURETYPE_2D,
 		.format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT,
-		.width = SHADOW_MAP_SIZE,
-		.height = SHADOW_MAP_SIZE,
+		.width = static_cast<Uint32>(starter::config::kShadowMapSize),
+		.height = static_cast<Uint32>(starter::config::kShadowMapSize),
 		.layer_count_or_depth = 1,
 		.num_levels = 1,
 		.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER,
@@ -105,9 +105,9 @@ static void update_shadow_camera(renderer_t* renderer, const scene_t* scene, con
 	const float yaw = atan2f(direction[0], -direction[2]);
 	camera_set_rotation(&renderer->shadow_camera, pitch, yaw);
 	camera_set_position(&renderer->shadow_camera,
-						focus[0] - direction[0] * SHADOW_DISTANCE,
-						SHADOW_CAMERA_HEIGHT - direction[1] * SHADOW_DISTANCE,
-						focus[2] - direction[2] * SHADOW_DISTANCE);
+						focus[0] - direction[0] * starter::config::kShadowDistance,
+						starter::config::kShadowCameraHeight - direction[1] * starter::config::kShadowDistance,
+						focus[2] - direction[2] * starter::config::kShadowDistance);
 	camera_update(&renderer->shadow_camera);
 }
 
@@ -129,9 +129,9 @@ bool renderer_init(renderer_t* renderer, SDL_Window* window, bool validation) {
 	renderer->scene_color_format = renderer->swapchain_format;
 
 	camera_init(&renderer->shadow_camera, CAMERA_TYPE_ORTHO);
-	renderer->shadow_camera.ortho = SHADOW_DISTANCE;
-	renderer->shadow_camera.near = -SHADOW_DISTANCE;
-	renderer->shadow_camera.far = SHADOW_DISTANCE * 2.0f;
+	renderer->shadow_camera.ortho = starter::config::kShadowDistance;
+	renderer->shadow_camera.near = -starter::config::kShadowDistance;
+	renderer->shadow_camera.far = starter::config::kShadowDistance * 2.0f;
 
 	if (!shader_library_init(&renderer->shaders, renderer->device)) {
 		return false;

@@ -1,4 +1,4 @@
-#include "helpers.h"
+#include "helpers.hpp"
 
 bool check_resource(const void* resource, const char* name) {
 	if (!resource) {

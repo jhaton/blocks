@@ -1,5 +1,5 @@
-#include "math3d.h"
-#include "helpers.h"
+#include "math3d.hpp"
+#include "helpers.hpp"
 #include <math.h>
 
 void math3d_vec3_set(float v[3], float x, float y, float z) {

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "config.h"
-#include <stdbool.h>
+#include "config.hpp"
 #include <stdint.h>
 
 typedef uint32_t entity_t;
@@ -61,32 +60,32 @@ typedef struct {
 } respawn_component_t;
 
 typedef struct {
-	bool alive[SCENE_MAX_ENTITIES];
-	char names[SCENE_MAX_ENTITIES][32];
+	bool alive[starter::config::kSceneMaxEntities];
+	char names[starter::config::kSceneMaxEntities][32];
 
-	bool has_transform[SCENE_MAX_ENTITIES];
-	transform_component_t transforms[SCENE_MAX_ENTITIES];
+	bool has_transform[starter::config::kSceneMaxEntities];
+	transform_component_t transforms[starter::config::kSceneMaxEntities];
 
-	bool has_renderable[SCENE_MAX_ENTITIES];
-	renderable_component_t renderables[SCENE_MAX_ENTITIES];
+	bool has_renderable[starter::config::kSceneMaxEntities];
+	renderable_component_t renderables[starter::config::kSceneMaxEntities];
 
-	bool has_light[SCENE_MAX_ENTITIES];
-	directional_light_component_t lights[SCENE_MAX_ENTITIES];
+	bool has_light[starter::config::kSceneMaxEntities];
+	directional_light_component_t lights[starter::config::kSceneMaxEntities];
 
-	bool has_oscillator[SCENE_MAX_ENTITIES];
-	oscillator_component_t oscillators[SCENE_MAX_ENTITIES];
+	bool has_oscillator[starter::config::kSceneMaxEntities];
+	oscillator_component_t oscillators[starter::config::kSceneMaxEntities];
 
-	bool has_spinner[SCENE_MAX_ENTITIES];
-	spinner_component_t spinners[SCENE_MAX_ENTITIES];
+	bool has_spinner[starter::config::kSceneMaxEntities];
+	spinner_component_t spinners[starter::config::kSceneMaxEntities];
 
-	bool has_player_controller[SCENE_MAX_ENTITIES];
-	player_controller_component_t player_controllers[SCENE_MAX_ENTITIES];
+	bool has_player_controller[starter::config::kSceneMaxEntities];
+	player_controller_component_t player_controllers[starter::config::kSceneMaxEntities];
 
-	bool has_gravity[SCENE_MAX_ENTITIES];
-	gravity_component_t gravities[SCENE_MAX_ENTITIES];
+	bool has_gravity[starter::config::kSceneMaxEntities];
+	gravity_component_t gravities[starter::config::kSceneMaxEntities];
 
-	bool has_respawn[SCENE_MAX_ENTITIES];
-	respawn_component_t respawns[SCENE_MAX_ENTITIES];
+	bool has_respawn[starter::config::kSceneMaxEntities];
+	respawn_component_t respawns[starter::config::kSceneMaxEntities];
 
 	entity_t sun;
 	entity_t player;
@@ -105,5 +104,4 @@ gravity_component_t* scene_add_gravity(scene_t* scene, entity_t entity);
 respawn_component_t* scene_add_respawn(scene_t* scene, entity_t entity);
 const directional_light_component_t* scene_main_light(const scene_t* scene);
 entity_t scene_player(const scene_t* scene);
-void scene_update(scene_t* scene, float seconds);
 void scene_build_default(scene_t* scene);

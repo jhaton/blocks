@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.24)
-project(sdl_gpu_fps_starter C)
+project(sdl_gpu_fps_starter C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(BINARY_DIR ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BINARY_DIR})
@@ -26,19 +29,22 @@ endif()
 add_subdirectory(lib/SDL)
 
 add_executable(sdl_gpu_fps_starter WIN32
-    src/camera.c
-    src/helpers.c
-    src/main.c
-    src/math3d.c
-    src/mesh.c
-    src/render_pass_overlay.c
-    src/render_pass_scene.c
-    src/render_pass_shadow.c
-    src/renderer.c
-    src/save.c
-    src/scene.c
-    src/shader.c
-    src/system_player.c
+    src/camera.cpp
+    src/game.cpp
+    src/helpers.cpp
+    src/main.cpp
+    src/math3d.cpp
+    src/mesh.cpp
+    src/render_pass_overlay.cpp
+    src/render_pass_scene.cpp
+    src/render_pass_shadow.cpp
+    src/renderer.cpp
+    src/save.cpp
+    src/scene.cpp
+    src/shader.cpp
+    src/system_oscillator.cpp
+    src/system_player.cpp
+    src/system_spinner.cpp
 )
 
 target_link_libraries(sdl_gpu_fps_starter PUBLIC SDL3::SDL3)

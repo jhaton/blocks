@@ -1,7 +1,7 @@
-#include "render_pass_overlay.h"
-#include "helpers.h"
-#include "renderer.h"
-#include "shader.h"
+#include "render_pass_overlay.hpp"
+#include "helpers.hpp"
+#include "renderer.hpp"
+#include "shader.hpp"
 
 typedef struct {
 	SDL_GPUGraphicsPipeline* pipeline;
@@ -12,37 +12,38 @@ typedef struct {
 } overlay_fragment_uniforms_t;
 
 static bool overlay_pass_init(renderer_t* renderer, render_pass_t* pass) {
-	overlay_pass_state_t* state = SDL_calloc(1, sizeof(*state));
+	overlay_pass_state_t* state = static_cast<overlay_pass_state_t*>(SDL_calloc(1, sizeof(*state)));
 	if (!state) {
 		return false;
 	}
-	SDL_GPUShader* vertex = shader_library_load(&renderer->shaders, "fullscreen.vert",
-											 SDL_GPU_SHADERSTAGE_VERTEX, 0, 0);
-	SDL_GPUShader* fragment = shader_library_load(&renderer->shaders, "overlay.frag",
-											   SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 0);
+	SDL_GPUShader* vertex = nullptr;
+	SDL_GPUShader* fragment = nullptr;
+	SDL_GPUColorTargetDescription color_target = {
+		.format = renderer->swapchain_format,
+		.blend_state = {
+			.enable_blend = true,
+			.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
+			.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+			.color_blend_op = SDL_GPU_BLENDOP_ADD,
+			.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+			.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+			.alpha_blend_op = SDL_GPU_BLENDOP_ADD,
+		},
+	};
+	SDL_GPUGraphicsPipelineCreateInfo info = {};
+
+	vertex = shader_library_load(&renderer->shaders, "fullscreen.vert", SDL_GPU_SHADERSTAGE_VERTEX, 0,
+								 0);
+	fragment =
+		shader_library_load(&renderer->shaders, "overlay.frag", SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 0);
 	if (!vertex || !fragment) {
 		goto fail;
 	}
 
-	SDL_GPUGraphicsPipelineCreateInfo info = {
-		.vertex_shader = vertex,
-		.fragment_shader = fragment,
-		.target_info = {
-			.num_color_targets = 1,
-			.color_target_descriptions = (SDL_GPUColorTargetDescription[]) {{
-				.format = renderer->swapchain_format,
-				.blend_state = {
-					.enable_blend = true,
-					.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
-					.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-					.color_blend_op = SDL_GPU_BLENDOP_ADD,
-					.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
-					.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-					.alpha_blend_op = SDL_GPU_BLENDOP_ADD,
-				},
-			}},
-		},
-	};
+	info.vertex_shader = vertex;
+	info.fragment_shader = fragment;
+	info.target_info.num_color_targets = 1;
+	info.target_info.color_target_descriptions = &color_target;
 	state->pipeline = SDL_CreateGPUGraphicsPipeline(renderer->device, &info);
 	if (!check_resource(state->pipeline, "create overlay pipeline")) {
 		goto fail;
@@ -72,7 +73,7 @@ static void overlay_pass_resize(renderer_t* renderer, render_pass_t* pass, Uint3
 }
 
 static void overlay_pass_execute(renderer_t* renderer, render_pass_t* pass, const frame_context_t* frame) {
-	overlay_pass_state_t* state = pass->state;
+	overlay_pass_state_t* state = static_cast<overlay_pass_state_t*>(pass->state);
 	overlay_fragment_uniforms_t uniforms = {
 		.viewport = {0, 0, (int)renderer->window_width, (int)renderer->window_height},
 	};
@@ -93,7 +94,7 @@ static void overlay_pass_execute(renderer_t* renderer, render_pass_t* pass, cons
 }
 
 static void overlay_pass_destroy(renderer_t* renderer, render_pass_t* pass) {
-	overlay_pass_state_t* state = pass->state;
+	overlay_pass_state_t* state = static_cast<overlay_pass_state_t*>(pass->state);
 	if (state) {
 		if (state->pipeline) {
 			SDL_ReleaseGPUGraphicsPipeline(renderer->device, state->pipeline);

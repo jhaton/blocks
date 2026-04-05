@@ -1,10 +1,12 @@
-#include "system_player.h"
-#include "helpers.h"
-#include <math.h>
+#include "system_player.hpp"
+#include "config.hpp"
+#include "helpers.hpp"
+#include <cmath>
 
 static bool player_ready(const scene_t* scene, entity_t player) {
-	return player < SCENE_MAX_ENTITIES && scene->alive[player] && scene->has_transform[player] &&
-		   scene->has_player_controller[player] && scene->has_gravity[player] && scene->has_respawn[player];
+	return player < starter::config::kSceneMaxEntities && scene->alive[player] &&
+		   scene->has_transform[player] && scene->has_player_controller[player] &&
+		   scene->has_gravity[player] && scene->has_respawn[player];
 }
 
 void system_player_apply_spawn(scene_t* scene, entity_t player, camera_t* camera) {
@@ -46,11 +48,10 @@ void system_player_capture_camera(scene_t* scene, entity_t player, const camera_
 	}
 }
 
-void system_player_move(scene_t* scene, entity_t player, const camera_t* camera, const bool* keys,
+void system_player_move(scene_t* scene, entity_t player, const camera_t* camera, const starter::FrameInput& input,
 						float seconds) {
 	assert(scene);
 	assert(camera);
-	assert(keys);
 	if (!player_ready(scene, player)) {
 		return;
 	}
@@ -58,30 +59,30 @@ void system_player_move(scene_t* scene, entity_t player, const camera_t* camera,
 	const player_controller_component_t* controller = &scene->player_controllers[player];
 	float x = 0.0f;
 	float z = 0.0f;
-	if (keys[SDL_SCANCODE_W]) {
+	if (input.move_forward) {
 		z += 1.0f;
 	}
-	if (keys[SDL_SCANCODE_S]) {
+	if (input.move_backward) {
 		z -= 1.0f;
 	}
-	if (keys[SDL_SCANCODE_A]) {
+	if (input.move_left) {
 		x -= 1.0f;
 	}
-	if (keys[SDL_SCANCODE_D]) {
+	if (input.move_right) {
 		x += 1.0f;
 	}
 	float speed = controller->move_speed;
-	if (keys[SDL_SCANCODE_LSHIFT]) {
+	if (input.move_fast) {
 		speed *= controller->fast_multiplier;
 	}
-	if (keys[SDL_SCANCODE_LCTRL]) {
+	if (input.move_slow) {
 		speed *= controller->slow_multiplier;
 	}
 	float pitch;
 	float yaw;
 	camera_get_rotation(camera, &pitch, &yaw);
-	const float s = sinf(yaw);
-	const float c = cosf(yaw);
+	const float s = std::sinf(yaw);
+	const float c = std::cosf(yaw);
 	transform->position[0] += c * x * speed * seconds + s * z * speed * seconds;
 	transform->position[2] += s * x * speed * seconds - c * z * speed * seconds;
 	(void)pitch;

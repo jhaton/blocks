@@ -1,5 +1,5 @@
-#include "camera.h"
-#include "helpers.h"
+#include "camera.hpp"
+#include "helpers.hpp"
 #include <math.h>
 #include <stdbool.h>
 

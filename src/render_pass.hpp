@@ -1,7 +1,7 @@
 #pragma once
 
-#include "camera.h"
-#include "scene.h"
+#include "camera.hpp"
+#include "scene.hpp"
 #include <SDL3/SDL_gpu.h>
 #include <stdbool.h>
 

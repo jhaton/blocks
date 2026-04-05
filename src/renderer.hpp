@@ -1,9 +1,9 @@
 #pragma once
 
-#include "camera.h"
-#include "mesh.h"
-#include "render_pass.h"
-#include "shader.h"
+#include "camera.hpp"
+#include "mesh.hpp"
+#include "render_pass.hpp"
+#include "shader.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 #include <stdbool.h>

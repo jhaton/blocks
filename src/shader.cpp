@@ -1,5 +1,5 @@
-#include "shader.h"
-#include "helpers.h"
+#include "shader.hpp"
+#include "helpers.hpp"
 #include <string.h>
 
 bool shader_library_init(shader_library_t* library, SDL_GPUDevice* device) {
@@ -40,7 +40,7 @@ SDL_GPUShader* shader_library_load(shader_library_t* library, const char* file,
 		SDL_Log("Failed to load %s: %s", path, SDL_GetError());
 		return NULL;
 	}
-	info.code = code;
+	info.code = static_cast<const Uint8*>(code);
 	info.entrypoint = library->entrypoint;
 	info.format = library->format;
 	info.stage = stage;

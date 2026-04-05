@@ -1,5 +1,5 @@
-#include "mesh.h"
-#include "helpers.h"
+#include "mesh.hpp"
+#include "helpers.hpp"
 
 typedef struct {
 	float position[3];
