@@ -73,6 +73,21 @@ typedef struct {
 } box_collider_component_t;
 
 typedef struct {
+	entity_t linked_entity;
+	float use_distance;
+	char prompt[32];
+	bool active;
+} interactable_component_t;
+
+typedef struct {
+	float closed_position[3];
+	float open_offset[3];
+	float open_amount;
+	float target_open_amount;
+	float speed;
+} sliding_door_component_t;
+
+typedef struct {
 	bool alive[starter::config::kSceneMaxEntities];
 	char names[starter::config::kSceneMaxEntities][32];
 
@@ -106,8 +121,15 @@ typedef struct {
 	bool has_box_collider[starter::config::kSceneMaxEntities];
 	box_collider_component_t box_colliders[starter::config::kSceneMaxEntities];
 
+	bool has_interactable[starter::config::kSceneMaxEntities];
+	interactable_component_t interactables[starter::config::kSceneMaxEntities];
+
+	bool has_sliding_door[starter::config::kSceneMaxEntities];
+	sliding_door_component_t sliding_doors[starter::config::kSceneMaxEntities];
+
 	entity_t sun;
 	entity_t player;
+	entity_t focused_interactable;
 	uint32_t count;
 } scene_t;
 
@@ -123,8 +145,11 @@ character_body_component_t* scene_add_character_body(scene_t* scene, entity_t en
 gravity_component_t* scene_add_gravity(scene_t* scene, entity_t entity);
 respawn_component_t* scene_add_respawn(scene_t* scene, entity_t entity);
 box_collider_component_t* scene_add_box_collider(scene_t* scene, entity_t entity);
+interactable_component_t* scene_add_interactable(scene_t* scene, entity_t entity);
+sliding_door_component_t* scene_add_sliding_door(scene_t* scene, entity_t entity);
 const directional_light_component_t* scene_main_light(const scene_t* scene);
 entity_t scene_player(const scene_t* scene);
+entity_t scene_focused_interactable(const scene_t* scene);
 entity_t scene_spawn_player(scene_t* scene, const float spawn[3]);
 entity_t scene_spawn_static_solid(scene_t* scene, const char* name, const float position[3],
 								  const float scale[3], const float color[3]);
@@ -134,4 +159,10 @@ entity_t scene_spawn_spinning_prop(scene_t* scene, const char* name, const float
 entity_t scene_spawn_moving_platform(scene_t* scene, const char* name, const float position[3],
 									 const float scale[3], const float color[3], const float axis[3],
 									 float amplitude, float speed, float phase);
+entity_t scene_spawn_interaction_switch(scene_t* scene, const char* name, const float position[3],
+										const float scale[3], const float color[3], entity_t linked_entity,
+										const char* prompt);
+entity_t scene_spawn_sliding_door(scene_t* scene, const char* name, const float position[3],
+								  const float scale[3], const float color[3],
+								  const float open_offset[3], float speed);
 void scene_build_default(scene_t* scene);

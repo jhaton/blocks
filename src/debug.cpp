@@ -54,6 +54,7 @@ void debug_update(DebugState* debug, const scene_t* scene, const camera_t* camer
 
 	debug->line_count = 0;
 	debug->entity_count = static_cast<int>(scene->count);
+	debug->focused_entity = scene_focused_interactable(scene);
 	if (seconds > EPSILON) {
 		debug->fps = 1.0f / seconds;
 		debug->frame_ms = seconds * 1000.0f;
@@ -76,9 +77,16 @@ void debug_update(DebugState* debug, const scene_t* scene, const camera_t* camer
 	set_line(debug, debug->line_count++, "PLAYER POS %.1f %.1f %.1f", camera->x, camera->y, camera->z);
 	set_line(debug, debug->line_count++, "PITCH %.1f  YAW %.1f", deg(camera->pitch), deg(camera->yaw));
 	set_line(debug, debug->line_count++, "VELY %.2f  GROUND %d", velocity_y, grounded ? 1 : 0);
+	if (debug->focused_entity < starter::config::kSceneMaxEntities && scene->alive[debug->focused_entity]) {
+		set_line(debug, debug->line_count++, "FOCUS %s  ACTIVE %d", scene->names[debug->focused_entity],
+				 scene->has_interactable[debug->focused_entity] && scene->interactables[debug->focused_entity].active ? 1
+																														 : 0);
+	} else {
+		set_line(debug, debug->line_count++, "FOCUS NONE");
+	}
 	set_line(debug, debug->line_count++, "ENTITIES %d  PASSES %d", debug->entity_count, debug->render_pass_count);
-	set_line(debug, debug->line_count++, "F1 DEBUG  F2 PANEL  F3 COLL");
-	set_line(debug, debug->line_count++, "F4 BODY   F6 AXES   F7 SHADOW");
+	set_line(debug, debug->line_count++, "E USE  F1 DEBUG  F2 PANEL");
+	set_line(debug, debug->line_count++, "F3 COLL  F4 BODY  F6 AXES");
 	set_line(debug, debug->line_count++, "COL %d BODY %d AXES %d SHADOW %d",
 			 debug->draw_colliders ? 1 : 0, debug->draw_player_body ? 1 : 0,
 			 debug->draw_axes ? 1 : 0, debug->draw_shadow ? 1 : 0);

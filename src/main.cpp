@@ -56,6 +56,9 @@ static FrameInput app_poll(app_t* app) {
 			case SDL_SCANCODE_ESCAPE:
 				input.release_mouse_requested = true;
 				break;
+			case SDL_SCANCODE_E:
+				input.use_requested = true;
+				break;
 			case SDL_SCANCODE_F11:
 				input.toggle_fullscreen_requested = true;
 				break;
@@ -199,6 +202,7 @@ int main(int argc, char** argv) {
 			input.move_fast = false;
 			input.move_slow = false;
 			input.jump_requested = false;
+			input.use_requested = false;
 		}
 		app.game.update(input, seconds);
 		renderer_draw(&app.renderer, &app.game.scene, &app.game.player_camera, app.game.elapsed_seconds,

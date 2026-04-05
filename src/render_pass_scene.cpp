@@ -20,6 +20,7 @@ typedef struct {
 	float light_color_intensity[4];
 	float camera_position_time[4];
 	float albedo[4];
+	float interaction[4];
 } scene_fragment_uniforms_t;
 
 static bool scene_pass_init(renderer_t* renderer, render_pass_t* pass) {
@@ -152,12 +153,16 @@ static void scene_pass_execute(renderer_t* renderer, render_pass_t* pass, const 
 			continue;
 		}
 		const renderable_component_t* renderable = &frame->scene->renderables[entity];
+		const bool highlighted = entity == frame->scene->focused_interactable;
+		const bool active =
+			frame->scene->has_interactable[entity] && frame->scene->interactables[entity].active;
 		scene_vertex_uniforms_t vertex_uniforms;
 		scene_fragment_uniforms_t fragment_uniforms = {
 			.light_direction = {light->direction[0], light->direction[1], light->direction[2], 0.0f},
 			.light_color_intensity = {light->color[0], light->color[1], light->color[2], light->intensity},
 			.camera_position_time = {frame->camera->x, frame->camera->y, frame->camera->z, frame->time_seconds},
 			.albedo = {renderable->color[0], renderable->color[1], renderable->color[2], 1.0f},
+			.interaction = {highlighted ? 1.0f : 0.0f, active ? 1.0f : 0.0f, 0.0f, 0.0f},
 		};
 		math3d_mat4_model(vertex_uniforms.model_matrix, transform->position, transform->rotation,
 						  transform->scale);

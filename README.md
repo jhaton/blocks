@@ -23,6 +23,7 @@ The starter launches into a stylized graybox arena:
 - a spinning monolith
 - a moving platform driven by a behavior component
 - gravity and fall-reset for the player
+- a switch that opens a gate
 - a built-in debug overlay and world debug draw toggles
 
 The scene is box-based on purpose so the rendering and entity structure stay easy to read.
@@ -78,6 +79,8 @@ Included starter components:
 
 Included starter systems:
 
+- [`system_door.cpp`](/Users/jason/github/jhaton/blocks/src/system_door.cpp)
+- [`system_interaction.cpp`](/Users/jason/github/jhaton/blocks/src/system_interaction.cpp)
 - [`system_physics.cpp`](/Users/jason/github/jhaton/blocks/src/system_physics.cpp)
 - [`system_player.cpp`](/Users/jason/github/jhaton/blocks/src/system_player.cpp)
 - [`system_spinner.cpp`](/Users/jason/github/jhaton/blocks/src/system_spinner.cpp)
@@ -87,6 +90,8 @@ Included scene recipes:
 
 - [`scene_spawn_player`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
 - [`scene_spawn_static_solid`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
+- [`scene_spawn_interaction_switch`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
+- [`scene_spawn_sliding_door`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
 - [`scene_spawn_spinning_prop`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
 - [`scene_spawn_moving_platform`](/Users/jason/github/jhaton/blocks/src/scene.cpp)
 
@@ -118,6 +123,8 @@ player_rotation -0.139626 3.141593
 
 It is intentionally trivial to parse and easy to replace later with a richer format. The clean extension point is the `Game` layer: keep save/load policy in [`game.cpp`](/Users/jason/github/jhaton/blocks/src/game.cpp) and keep the file format logic in [`save.cpp`](/Users/jason/github/jhaton/blocks/src/save.cpp).
 
+The default save now persists both player transform and the example interaction state so the starter shows how world state can survive reloads.
+
 ### Debugging
 
 Runtime debug state lives in [`debug.hpp`](/Users/jason/github/jhaton/blocks/src/debug.hpp) and [`debug.cpp`](/Users/jason/github/jhaton/blocks/src/debug.cpp).
@@ -132,6 +139,7 @@ The template now ships with:
 
 - `WASD` move on the ground plane
 - `Space` jump
+- `E` use focused interactable
 - mouse look after clicking into the window
 - `LShift` move faster
 - `LCtrl` move slower

@@ -6,7 +6,7 @@
 
 namespace starter {
 
-inline constexpr int kDebugLineCount = 10;
+inline constexpr int kDebugLineCount = 12;
 inline constexpr int kDebugLineLength = 96;
 
 struct DebugState {
@@ -21,6 +21,7 @@ struct DebugState {
 	float frame_ms = 0.0f;
 	int entity_count = 0;
 	int render_pass_count = 0;
+	entity_t focused_entity = UINT32_MAX;
 	char lines[kDebugLineCount][kDebugLineLength] = {};
 	int line_count = 0;
 };

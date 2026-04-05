@@ -313,30 +313,19 @@ void push_text_quad(overlay_text_vertex_t* vertices, Uint32* count, const float 
 	*count += 6;
 }
 
-void build_text_vertices(const starter::DebugState* debug, overlay_text_vertex_t* vertices, Uint32* count) {
+void build_text_vertices(const starter::DebugState* debug, const scene_t* scene, const float viewport_width,
+						 const float viewport_height, overlay_text_vertex_t* vertices, Uint32* count) {
 	*count = 0;
-	if (!debug || !debug->enabled || !debug->show_panel) {
-		return;
-	}
-
-	const float base_x = 28.0f;
-	const float base_y = 26.0f;
-	const float scale = 2.0f;
-	for (int line = 0; line < debug->line_count; ++line) {
-		const float y = base_y + line * 16.0f;
+	auto push_text_line = [&](const char* text, float base_x, float base_y, const float color[4], float scale) {
 		float x = base_x;
-		float color[4] = {0.92f, 0.94f, 0.98f, 0.95f};
-		if (line == 0) {
-			color[0] = 0.94f;
-			color[1] = 0.79f;
-			color[2] = 0.43f;
-		} else if (line == 3) {
-			color[0] = 0.56f;
-			color[1] = 0.88f;
-			color[2] = 0.63f;
-		}
-		for (const char* c = debug->lines[line]; *c; ++c) {
+		for (const char* c = text; *c; ++c) {
 			char ch = *c;
+			if (ch >= 'a' && ch <= 'z') {
+				ch = static_cast<char>(ch - ('a' - 'A'));
+			}
+			if (ch == '_') {
+				ch = '-';
+			}
 			if (ch < 32 || ch >= 96) {
 				ch = '?';
 			}
@@ -349,11 +338,46 @@ void build_text_vertices(const starter::DebugState* debug, overlay_text_vertex_t
 							 static_cast<float>(kFontTextureWidth);
 			const float v1 = static_cast<float>((glyph_index / kFontColumns) * kFontCellHeight + kFontCellHeight) /
 							 static_cast<float>(kFontTextureHeight);
-			push_text_quad(vertices, count, x, y, kFontCellWidth * scale, kFontCellHeight * scale, u0, v0, u1,
+			push_text_quad(vertices, count, x, base_y, kFontCellWidth * scale, kFontCellHeight * scale, u0, v0, u1,
 						   v1, color);
 			x += 6.0f * scale;
 		}
+	};
+
+	if (debug && debug->enabled && debug->show_panel) {
+		const float base_x = 28.0f;
+		const float base_y = 26.0f;
+		const float scale = 2.0f;
+		for (int line = 0; line < debug->line_count; ++line) {
+			const float y = base_y + line * 16.0f;
+			float color[4] = {0.92f, 0.94f, 0.98f, 0.95f};
+			if (line == 0) {
+				color[0] = 0.94f;
+				color[1] = 0.79f;
+				color[2] = 0.43f;
+			} else if (line == 3) {
+				color[0] = 0.56f;
+				color[1] = 0.88f;
+				color[2] = 0.63f;
+			}
+			push_text_line(debug->lines[line], base_x, y, color, scale);
+		}
 	}
+
+	if (!scene) {
+		return;
+	}
+	const entity_t focused = scene_focused_interactable(scene);
+	if (focused >= starter::config::kSceneMaxEntities || !scene->alive[focused] || !scene->has_interactable[focused]) {
+		return;
+	}
+	const float prompt_color[4] = {0.98f, 0.92f, 0.76f, 0.98f};
+	const char* prompt = scene->interactables[focused].prompt;
+	const float prompt_scale = 2.25f;
+	const float prompt_width = SDL_strlen(prompt) * 6.0f * prompt_scale;
+	const float prompt_x = viewport_width * 0.5f - prompt_width * 0.5f;
+	const float prompt_y = viewport_height * 0.5f + 36.0f;
+	push_text_line(prompt, prompt_x, prompt_y, prompt_color, prompt_scale);
 }
 
 bool overlay_pass_init(renderer_t* renderer, render_pass_t* pass) {
@@ -509,10 +533,16 @@ void overlay_pass_resize(renderer_t* renderer, render_pass_t* pass, Uint32 width
 void overlay_pass_execute(renderer_t* renderer, render_pass_t* pass, const frame_context_t* frame) {
 	overlay_pass_state_t* state = static_cast<overlay_pass_state_t*>(pass->state);
 	Uint32 text_vertex_count = 0;
-	if (frame->debug && frame->debug->enabled && frame->debug->show_panel) {
+	const entity_t focused = frame->scene ? scene_focused_interactable(frame->scene) : UINT32_MAX;
+	const bool show_prompt = frame->scene && focused < starter::config::kSceneMaxEntities &&
+							 frame->scene->alive[focused] && frame->scene->has_interactable[focused];
+	const bool show_panel = frame->debug && frame->debug->enabled && frame->debug->show_panel;
+	if (show_panel || show_prompt) {
 		void* mapped = SDL_MapGPUTransferBuffer(renderer->device, state->text_transfer_buffer, false);
 		if (check_resource(mapped, "map overlay text transfer buffer")) {
-			build_text_vertices(frame->debug, static_cast<overlay_text_vertex_t*>(mapped), &text_vertex_count);
+			build_text_vertices(frame->debug, frame->scene, static_cast<float>(renderer->window_width),
+								static_cast<float>(renderer->window_height),
+								static_cast<overlay_text_vertex_t*>(mapped), &text_vertex_count);
 			SDL_UnmapGPUTransferBuffer(renderer->device, state->text_transfer_buffer);
 			if (text_vertex_count > 0) {
 				SDL_GPUCopyPass* copy_pass = SDL_BeginGPUCopyPass(frame->commands);

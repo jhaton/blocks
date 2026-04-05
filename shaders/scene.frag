@@ -14,6 +14,7 @@ layout(set = 3, binding = 0) uniform scene_fragment_uniforms
     vec4 u_light_color_intensity;
     vec4 u_camera_position_time;
     vec4 u_albedo;
+    vec4 u_interaction;
 };
 
 float sample_shadow(vec3 normal, vec3 light_dir)
@@ -45,6 +46,14 @@ void main()
     float rim = pow(1.0 - max(dot(normalize(view_vector), normal), 0.0), 2.5) * 0.08;
 
     vec3 color = u_albedo.rgb;
+    if (u_interaction.y > 0.5)
+    {
+        color = mix(color, vec3(0.42, 0.92, 0.66), 0.22);
+    }
+    if (u_interaction.x > 0.5)
+    {
+        color = mix(color, vec3(0.98, 0.82, 0.38), 0.30);
+    }
     vec3 light_color = u_light_color_intensity.rgb * u_light_color_intensity.a;
     vec3 lit = color * ambient;
     lit += color * diffuse * shadow * light_color;

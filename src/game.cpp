@@ -2,6 +2,8 @@
 
 #include "config.hpp"
 #include "save.hpp"
+#include "system_door.hpp"
+#include "system_interaction.hpp"
 #include "system_physics.hpp"
 #include "system_oscillator.hpp"
 #include "system_player.hpp"
@@ -19,11 +21,11 @@ bool Game::init() {
 }
 
 void Game::request_save() const {
-	save_write_player(config::kSavePath.data(), &player_camera);
+	save_write_game(config::kSavePath.data(), &player_camera, &scene);
 }
 
 void Game::request_load() {
-	if (!save_load_player(config::kSavePath.data(), &player_camera)) {
+	if (!save_load_game(config::kSavePath.data(), &player_camera, &scene)) {
 		system_player_apply_spawn(&scene, scene_player(&scene), &player_camera);
 	} else {
 		system_player_capture_camera(&scene, scene_player(&scene), &player_camera);
@@ -44,10 +46,13 @@ void Game::update(const FrameInput& input, float seconds) {
 	camera_rotate(&player_camera, -input.mouse_delta_y * config::kPlayerMouseSensitivity,
 				  input.mouse_delta_x * config::kPlayerMouseSensitivity);
 
+	system_interaction_focus(&scene, &player_camera);
+	system_interaction_use(&scene, input);
 	system_physics_begin_player_step(&scene, scene_player(&scene));
 	system_player_move(&scene, scene_player(&scene), &player_camera, input, seconds);
 	system_physics_simulate_player(&scene, scene_player(&scene), input.jump_requested, seconds);
 	system_player_respawn(&scene, scene_player(&scene), &player_camera);
+	system_door_update(&scene, seconds);
 	system_spinner_update(&scene, seconds);
 	system_oscillator_update(&scene, elapsed_seconds);
 	system_player_sync_camera(&scene, scene_player(&scene), &player_camera);

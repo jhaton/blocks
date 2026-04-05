@@ -15,6 +15,7 @@ void scene_init(scene_t* scene) {
 	SDL_zero(*scene);
 	scene->sun = UINT32_MAX;
 	scene->player = UINT32_MAX;
+	scene->focused_interactable = UINT32_MAX;
 }
 
 entity_t scene_create(scene_t* scene, const char* name) {
@@ -145,6 +146,31 @@ box_collider_component_t* scene_add_box_collider(scene_t* scene, entity_t entity
 	return collider;
 }
 
+interactable_component_t* scene_add_interactable(scene_t* scene, entity_t entity) {
+	assert(scene);
+	assert(entity < starter::config::kSceneMaxEntities);
+	scene->has_interactable[entity] = true;
+	interactable_component_t* interactable = &scene->interactables[entity];
+	interactable->linked_entity = UINT32_MAX;
+	interactable->use_distance = 4.0f;
+	SDL_strlcpy(interactable->prompt, "PRESS E TO USE", sizeof(interactable->prompt));
+	interactable->active = false;
+	return interactable;
+}
+
+sliding_door_component_t* scene_add_sliding_door(scene_t* scene, entity_t entity) {
+	assert(scene);
+	assert(entity < starter::config::kSceneMaxEntities);
+	scene->has_sliding_door[entity] = true;
+	sliding_door_component_t* door = &scene->sliding_doors[entity];
+	math3d_vec3_set(door->closed_position, 0.0f, 0.0f, 0.0f);
+	math3d_vec3_set(door->open_offset, 0.0f, 6.0f, 0.0f);
+	door->open_amount = 0.0f;
+	door->target_open_amount = 0.0f;
+	door->speed = 2.0f;
+	return door;
+}
+
 const directional_light_component_t* scene_main_light(const scene_t* scene) {
 	assert(scene);
 	if (scene->sun >= starter::config::kSceneMaxEntities || !scene->has_light[scene->sun]) {
@@ -156,6 +182,11 @@ const directional_light_component_t* scene_main_light(const scene_t* scene) {
 entity_t scene_player(const scene_t* scene) {
 	assert(scene);
 	return scene->player;
+}
+
+entity_t scene_focused_interactable(const scene_t* scene) {
+	assert(scene);
+	return scene->focused_interactable;
 }
 
 entity_t scene_spawn_static_solid(scene_t* scene, const char* name, const float position[3],
@@ -206,6 +237,29 @@ entity_t scene_spawn_player(scene_t* scene, const float spawn[3]) {
 	return player;
 }
 
+entity_t scene_spawn_interaction_switch(scene_t* scene, const char* name, const float position[3],
+										const float scale[3], const float color[3], entity_t linked_entity,
+										const char* prompt) {
+	entity_t entity = scene_spawn_static_solid(scene, name, position, scale, color);
+	interactable_component_t* interactable = scene_add_interactable(scene, entity);
+	interactable->linked_entity = linked_entity;
+	if (prompt) {
+		SDL_strlcpy(interactable->prompt, prompt, sizeof(interactable->prompt));
+	}
+	return entity;
+}
+
+entity_t scene_spawn_sliding_door(scene_t* scene, const char* name, const float position[3],
+								  const float scale[3], const float color[3],
+								  const float open_offset[3], float speed) {
+	entity_t entity = scene_spawn_static_solid(scene, name, position, scale, color);
+	sliding_door_component_t* door = scene_add_sliding_door(scene, entity);
+	SDL_memcpy(door->closed_position, position, sizeof(door->closed_position));
+	SDL_memcpy(door->open_offset, open_offset, sizeof(door->open_offset));
+	door->speed = speed;
+	return entity;
+}
+
 void scene_build_default(scene_t* scene) {
 	assert(scene);
 	scene_init(scene);
@@ -248,6 +302,19 @@ void scene_build_default(scene_t* scene) {
 	const float cover2_scale[3] = {3.0f, 3.0f, 10.0f};
 	const float cover3_position[3] = {28.0f, 2.2f, 22.0f};
 	const float cover3_scale[3] = {8.0f, 4.0f, 4.0f};
+	const float gate_left_position[3] = {-7.0f, 4.0f, 8.0f};
+	const float gate_left_scale[3] = {1.0f, 9.0f, 1.0f};
+	const float gate_right_position[3] = {7.0f, 4.0f, 8.0f};
+	const float gate_right_scale[3] = {1.0f, 9.0f, 1.0f};
+	const float gate_top_position[3] = {0.0f, 8.0f, 8.0f};
+	const float gate_top_scale[3] = {7.0f, 1.0f, 1.0f};
+	const float gate_door_position[3] = {0.0f, 3.0f, 8.0f};
+	const float gate_door_scale[3] = {5.0f, 6.0f, 1.0f};
+	const float gate_open_offset[3] = {0.0f, 7.5f, 0.0f};
+	const float switch_pedestal_position[3] = {-18.0f, 1.0f, 18.0f};
+	const float switch_pedestal_scale[3] = {1.5f, 2.0f, 1.5f};
+	const float switch_position[3] = {-18.0f, 2.6f, 18.0f};
+	const float switch_scale[3] = {0.8f, 0.4f, 0.8f};
 
 	scene_spawn_static_solid(scene, "floor", floor_position, floor_scale, sand);
 	scene_spawn_static_solid(scene, "back_wall", back_wall_position, back_wall_scale, slate);
@@ -268,4 +335,14 @@ void scene_build_default(scene_t* scene) {
 	scene_spawn_static_solid(scene, "cover_1", cover1_position, cover1_scale, moss);
 	scene_spawn_static_solid(scene, "cover_2", cover2_position, cover2_scale, coral);
 	scene_spawn_static_solid(scene, "cover_3", cover3_position, cover3_scale, sky);
+
+	scene_spawn_static_solid(scene, "gate_left", gate_left_position, gate_left_scale, slate);
+	scene_spawn_static_solid(scene, "gate_right", gate_right_position, gate_right_scale, slate);
+	scene_spawn_static_solid(scene, "gate_top", gate_top_position, gate_top_scale, slate);
+	entity_t gate = scene_spawn_sliding_door(scene, "gate_door", gate_door_position, gate_door_scale, coral,
+											 gate_open_offset, 1.8f);
+
+	scene_spawn_static_solid(scene, "switch_pedestal", switch_pedestal_position, switch_pedestal_scale, slate);
+	scene_spawn_interaction_switch(scene, "control_switch", switch_position, switch_scale, sky, gate,
+								   "PRESS E TO TOGGLE GATE");
 }
