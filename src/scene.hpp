@@ -48,6 +48,14 @@ typedef struct {
 } player_controller_component_t;
 
 typedef struct {
+	float radius;
+	float height;
+	float eye_offset;
+	float jump_speed;
+	float previous_position[3];
+} character_body_component_t;
+
+typedef struct {
 	float velocity_y;
 	float gravity;
 	bool grounded;
@@ -58,6 +66,11 @@ typedef struct {
 	float ground_y;
 	float reset_y;
 } respawn_component_t;
+
+typedef struct {
+	float half_extents[3];
+	bool solid;
+} box_collider_component_t;
 
 typedef struct {
 	bool alive[starter::config::kSceneMaxEntities];
@@ -81,11 +94,17 @@ typedef struct {
 	bool has_player_controller[starter::config::kSceneMaxEntities];
 	player_controller_component_t player_controllers[starter::config::kSceneMaxEntities];
 
+	bool has_character_body[starter::config::kSceneMaxEntities];
+	character_body_component_t character_bodies[starter::config::kSceneMaxEntities];
+
 	bool has_gravity[starter::config::kSceneMaxEntities];
 	gravity_component_t gravities[starter::config::kSceneMaxEntities];
 
 	bool has_respawn[starter::config::kSceneMaxEntities];
 	respawn_component_t respawns[starter::config::kSceneMaxEntities];
+
+	bool has_box_collider[starter::config::kSceneMaxEntities];
+	box_collider_component_t box_colliders[starter::config::kSceneMaxEntities];
 
 	entity_t sun;
 	entity_t player;
@@ -100,8 +119,10 @@ directional_light_component_t* scene_add_directional_light(scene_t* scene, entit
 oscillator_component_t* scene_add_oscillator(scene_t* scene, entity_t entity);
 spinner_component_t* scene_add_spinner(scene_t* scene, entity_t entity);
 player_controller_component_t* scene_add_player_controller(scene_t* scene, entity_t entity);
+character_body_component_t* scene_add_character_body(scene_t* scene, entity_t entity);
 gravity_component_t* scene_add_gravity(scene_t* scene, entity_t entity);
 respawn_component_t* scene_add_respawn(scene_t* scene, entity_t entity);
+box_collider_component_t* scene_add_box_collider(scene_t* scene, entity_t entity);
 const directional_light_component_t* scene_main_light(const scene_t* scene);
 entity_t scene_player(const scene_t* scene);
 void scene_build_default(scene_t* scene);

@@ -65,6 +65,9 @@ static FrameInput app_poll(app_t* app) {
 			case SDL_SCANCODE_F9:
 				input.load_requested = true;
 				break;
+			case SDL_SCANCODE_SPACE:
+				input.jump_requested = true;
+				break;
 			default:
 				break;
 			}
@@ -177,6 +180,7 @@ int main(int argc, char** argv) {
 			input.move_right = false;
 			input.move_fast = false;
 			input.move_slow = false;
+			input.jump_requested = false;
 		}
 		app.game.update(input, seconds);
 		renderer_draw(&app.renderer, &app.game.scene, &app.game.player_camera, app.game.elapsed_seconds);

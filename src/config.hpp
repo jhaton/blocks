@@ -16,6 +16,8 @@ inline constexpr float kPlayerFastMultiplier = 2.5f;
 inline constexpr float kPlayerSlowMultiplier = 0.35f;
 inline constexpr float kPlayerMouseSensitivity = 0.10f;
 inline constexpr float kPlayerGravity = 28.0f;
+inline constexpr float kPlayerRadius = 0.45f;
+inline constexpr float kPlayerJumpSpeed = 10.5f;
 inline constexpr float kPlayerGroundY = 0.0f;
 inline constexpr float kPlayerResetY = -40.0f;
 

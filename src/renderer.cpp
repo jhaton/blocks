@@ -46,29 +46,27 @@ static void destroy_textures(renderer_t* renderer) {
 static bool create_textures(renderer_t* renderer, Uint32 width, Uint32 height) {
 	destroy_textures(renderer);
 
-	SDL_GPUTextureCreateInfo shadow_info = {
-		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT,
-		.width = static_cast<Uint32>(starter::config::kShadowMapSize),
-		.height = static_cast<Uint32>(starter::config::kShadowMapSize),
-		.layer_count_or_depth = 1,
-		.num_levels = 1,
-		.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER,
-	};
+	SDL_GPUTextureCreateInfo shadow_info = {};
+	shadow_info.type = SDL_GPU_TEXTURETYPE_2D;
+	shadow_info.format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
+	shadow_info.width = static_cast<Uint32>(starter::config::kShadowMapSize);
+	shadow_info.height = static_cast<Uint32>(starter::config::kShadowMapSize);
+	shadow_info.layer_count_or_depth = 1;
+	shadow_info.num_levels = 1;
+	shadow_info.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
 	renderer->shadow_depth_texture = SDL_CreateGPUTexture(renderer->device, &shadow_info);
 	if (!check_resource(renderer->shadow_depth_texture, "create shadow depth texture")) {
 		return false;
 	}
 
-	SDL_GPUTextureCreateInfo color_info = {
-		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = renderer->scene_color_format,
-		.width = width,
-		.height = height,
-		.layer_count_or_depth = 1,
-		.num_levels = 1,
-		.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER,
-	};
+	SDL_GPUTextureCreateInfo color_info = {};
+	color_info.type = SDL_GPU_TEXTURETYPE_2D;
+	color_info.format = renderer->scene_color_format;
+	color_info.width = width;
+	color_info.height = height;
+	color_info.layer_count_or_depth = 1;
+	color_info.num_levels = 1;
+	color_info.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
 	renderer->scene_color_texture = SDL_CreateGPUTexture(renderer->device, &color_info);
 	if (!check_resource(renderer->scene_color_texture, "create scene color texture")) {
 		return false;

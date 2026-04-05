@@ -6,6 +6,7 @@
 static bool player_ready(const scene_t* scene, entity_t player) {
 	return player < starter::config::kSceneMaxEntities && scene->alive[player] &&
 		   scene->has_transform[player] && scene->has_player_controller[player] &&
+		   scene->has_character_body[player] &&
 		   scene->has_gravity[player] && scene->has_respawn[player];
 }
 
@@ -17,10 +18,11 @@ void system_player_apply_spawn(scene_t* scene, entity_t player, camera_t* camera
 	}
 	transform_component_t* transform = &scene->transforms[player];
 	player_controller_component_t* controller = &scene->player_controllers[player];
+	character_body_component_t* body = &scene->character_bodies[player];
 	gravity_component_t* gravity = &scene->gravities[player];
 	respawn_component_t* respawn = &scene->respawns[player];
 	SDL_memcpy(transform->position, respawn->spawn, sizeof(transform->position));
-	transform->position[1] = respawn->ground_y + controller->eye_height;
+	SDL_memcpy(body->previous_position, transform->position, sizeof(body->previous_position));
 	gravity->velocity_y = 0.0f;
 	gravity->grounded = true;
 	camera_set_position(camera, transform->position[0], transform->position[1], transform->position[2]);
@@ -34,18 +36,11 @@ void system_player_capture_camera(scene_t* scene, entity_t player, const camera_
 		return;
 	}
 	transform_component_t* transform = &scene->transforms[player];
+	character_body_component_t* body = &scene->character_bodies[player];
 	gravity_component_t* gravity = &scene->gravities[player];
-	player_controller_component_t* controller = &scene->player_controllers[player];
-	respawn_component_t* respawn = &scene->respawns[player];
 	camera_get_position(camera, &transform->position[0], &transform->position[1], &transform->position[2]);
-	const float ground_height = respawn->ground_y + controller->eye_height;
-	if (transform->position[1] <= ground_height) {
-		transform->position[1] = ground_height;
-		gravity->velocity_y = 0.0f;
-		gravity->grounded = true;
-	} else {
-		gravity->grounded = false;
-	}
+	SDL_memcpy(body->previous_position, transform->position, sizeof(body->previous_position));
+	gravity->velocity_y = 0.0f;
 }
 
 void system_player_move(scene_t* scene, entity_t player, const camera_t* camera, const starter::FrameInput& input,
@@ -86,30 +81,6 @@ void system_player_move(scene_t* scene, entity_t player, const camera_t* camera,
 	transform->position[0] += c * x * speed * seconds + s * z * speed * seconds;
 	transform->position[2] += s * x * speed * seconds - c * z * speed * seconds;
 	(void)pitch;
-}
-
-void system_player_apply_gravity(scene_t* scene, entity_t player, float seconds) {
-	assert(scene);
-	if (!player_ready(scene, player)) {
-		return;
-	}
-	transform_component_t* transform = &scene->transforms[player];
-	const player_controller_component_t* controller = &scene->player_controllers[player];
-	gravity_component_t* gravity = &scene->gravities[player];
-	const respawn_component_t* respawn = &scene->respawns[player];
-	const float ground_height = respawn->ground_y + controller->eye_height;
-
-	if (transform->position[1] > ground_height + EPSILON || !gravity->grounded) {
-		gravity->velocity_y -= gravity->gravity * seconds;
-		transform->position[1] += gravity->velocity_y * seconds;
-	}
-	if (transform->position[1] <= ground_height) {
-		transform->position[1] = ground_height;
-		gravity->velocity_y = 0.0f;
-		gravity->grounded = true;
-	} else {
-		gravity->grounded = false;
-	}
 }
 
 void system_player_respawn(scene_t* scene, entity_t player, camera_t* camera) {

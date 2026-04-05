@@ -16,6 +16,7 @@ struct FrameInput {
 	bool move_right = false;
 	bool move_fast = false;
 	bool move_slow = false;
+	bool jump_requested = false;
 
 	float mouse_delta_x = 0.0f;
 	float mouse_delta_y = 0.0f;

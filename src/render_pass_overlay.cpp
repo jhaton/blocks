@@ -18,19 +18,17 @@ static bool overlay_pass_init(renderer_t* renderer, render_pass_t* pass) {
 	}
 	SDL_GPUShader* vertex = nullptr;
 	SDL_GPUShader* fragment = nullptr;
-	SDL_GPUColorTargetDescription color_target = {
-		.format = renderer->swapchain_format,
-		.blend_state = {
-			.enable_blend = true,
-			.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
-			.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-			.color_blend_op = SDL_GPU_BLENDOP_ADD,
-			.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
-			.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-			.alpha_blend_op = SDL_GPU_BLENDOP_ADD,
-		},
-	};
+	SDL_GPUColorTargetDescription color_target = {};
 	SDL_GPUGraphicsPipelineCreateInfo info = {};
+
+	color_target.format = renderer->swapchain_format;
+	color_target.blend_state.enable_blend = true;
+	color_target.blend_state.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+	color_target.blend_state.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+	color_target.blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
+	color_target.blend_state.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
+	color_target.blend_state.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+	color_target.blend_state.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
 
 	vertex = shader_library_load(&renderer->shaders, "fullscreen.vert", SDL_GPU_SHADERSTAGE_VERTEX, 0,
 								 0);

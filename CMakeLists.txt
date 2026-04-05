@@ -42,6 +42,7 @@ add_executable(sdl_gpu_fps_starter WIN32
     src/save.cpp
     src/scene.cpp
     src/shader.cpp
+    src/system_physics.cpp
     src/system_oscillator.cpp
     src/system_player.cpp
     src/system_spinner.cpp

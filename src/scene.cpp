@@ -100,6 +100,19 @@ player_controller_component_t* scene_add_player_controller(scene_t* scene, entit
 	return controller;
 }
 
+character_body_component_t* scene_add_character_body(scene_t* scene, entity_t entity) {
+	assert(scene);
+	assert(entity < starter::config::kSceneMaxEntities);
+	scene->has_character_body[entity] = true;
+	character_body_component_t* body = &scene->character_bodies[entity];
+	body->radius = starter::config::kPlayerRadius;
+	body->height = starter::config::kPlayerHeight;
+	body->eye_offset = starter::config::kPlayerHeight;
+	body->jump_speed = starter::config::kPlayerJumpSpeed;
+	math3d_vec3_set(body->previous_position, 0.0f, 0.0f, 0.0f);
+	return body;
+}
+
 gravity_component_t* scene_add_gravity(scene_t* scene, entity_t entity) {
 	assert(scene);
 	assert(entity < starter::config::kSceneMaxEntities);
@@ -116,10 +129,20 @@ respawn_component_t* scene_add_respawn(scene_t* scene, entity_t entity) {
 	assert(entity < starter::config::kSceneMaxEntities);
 	scene->has_respawn[entity] = true;
 	respawn_component_t* respawn = &scene->respawns[entity];
-	math3d_vec3_set(respawn->spawn, 0.0f, starter::config::kPlayerHeight, 38.0f);
+	math3d_vec3_set(respawn->spawn, 0.0f, starter::config::kPlayerHeight, 28.0f);
 	respawn->ground_y = starter::config::kPlayerGroundY;
 	respawn->reset_y = starter::config::kPlayerResetY;
 	return respawn;
+}
+
+box_collider_component_t* scene_add_box_collider(scene_t* scene, entity_t entity) {
+	assert(scene);
+	assert(entity < starter::config::kSceneMaxEntities);
+	scene->has_box_collider[entity] = true;
+	box_collider_component_t* collider = &scene->box_colliders[entity];
+	math3d_vec3_set(collider->half_extents, 0.5f, 0.5f, 0.5f);
+	collider->solid = true;
+	return collider;
 }
 
 const directional_light_component_t* scene_main_light(const scene_t* scene) {
@@ -140,9 +163,11 @@ static entity_t add_box(scene_t* scene, const char* name, const float position[3
 	entity_t entity = scene_create(scene, name);
 	transform_component_t* transform = scene_add_transform(scene, entity);
 	renderable_component_t* renderable = scene_add_renderable(scene, entity);
+	box_collider_component_t* collider = scene_add_box_collider(scene, entity);
 	SDL_memcpy(transform->position, position, sizeof(transform->position));
 	SDL_memcpy(transform->scale, scale, sizeof(transform->scale));
 	SDL_memcpy(renderable->color, color, sizeof(renderable->color));
+	SDL_memcpy(collider->half_extents, scale, sizeof(collider->half_extents));
 	return entity;
 }
 
@@ -162,10 +187,11 @@ void scene_build_default(scene_t* scene) {
 	entity_t player = scene_create(scene, "player");
 	transform_component_t* player_transform = scene_add_transform(scene, player);
 	player_controller_component_t* controller = scene_add_player_controller(scene, player);
+	character_body_component_t* body = scene_add_character_body(scene, player);
 	gravity_component_t* gravity = scene_add_gravity(scene, player);
 	respawn_component_t* respawn = scene_add_respawn(scene, player);
 	math3d_vec3_copy(player_transform->position, respawn->spawn);
-	player_transform->position[1] = respawn->ground_y + controller->eye_height;
+	math3d_vec3_copy(body->previous_position, player_transform->position);
 	gravity->grounded = true;
 
 	const float floor_position[3] = {0.0f, -0.5f, 0.0f};
