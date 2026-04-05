@@ -91,9 +91,17 @@ void resolve_axis(scene_t* scene, entity_t player, int axis, float previous_valu
 			break;
 		case 1: {
 			const float top_offset = body.height - body.eye_offset;
+			const float previous_min_y = previous_value - body.eye_offset;
+			const float previous_max_y = previous_min_y + body.height;
 			if (delta > 0.0f) {
+				if (previous_max_y > box_min_y + EPSILON) {
+					continue;
+				}
 				player_transform.position[1] = box_min_y - top_offset;
 			} else {
+				if (previous_min_y < box_max_y - EPSILON) {
+					continue;
+				}
 				player_transform.position[1] = box_max_y + body.eye_offset;
 				*grounded = true;
 			}

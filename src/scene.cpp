@@ -198,7 +198,9 @@ entity_t scene_spawn_static_solid(scene_t* scene, const char* name, const float 
 	SDL_memcpy(transform->position, position, sizeof(transform->position));
 	SDL_memcpy(transform->scale, scale, sizeof(transform->scale));
 	SDL_memcpy(renderable->color, color, sizeof(renderable->color));
-	SDL_memcpy(collider->half_extents, scale, sizeof(collider->half_extents));
+	collider->half_extents[0] = scale[0] * 0.5f;
+	collider->half_extents[1] = scale[1] * 0.5f;
+	collider->half_extents[2] = scale[2] * 0.5f;
 	return entity;
 }
 
